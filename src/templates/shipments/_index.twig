@@ -1,0 +1,109 @@
+{% extends '_layouts/cp' %}
+{% import '_includes/forms' as forms %}
+
+{% set title = 'Shipments'|t('shipper') %}
+{% set selectedSubnavItem = 'shipments' %}
+
+{% block actionButton %}
+    {% if isPro and currentUser.can('shipper-syncOrders') %}
+        <button type="button" class="btn" id="shipper-sync">{{ 'Sync now'|t('shipper') }}</button>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="flex" style="margin-bottom: 14px;">
+        {{ forms.text({
+            id: 'shipper-search',
+            name: 'search',
+            value: search,
+            placeholder: 'Search tracking number, carrier or service'|t('shipper'),
+            class: 'text fullwidth'
+        }) }}
+    </div>
+
+    {% if shipments|length %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'Order'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Carrier'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Service'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Tracking'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Shipped'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Items'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Source'|t('shipper') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shipment in shipments %}
+                    {% set order = orders[shipment.orderId] ?? null %}
+                    <tr>
+                        <td>
+                            {% if order %}
+                                <a href="{{ order.getCpEditUrl() }}">{{ order.reference ?? order.shortNumber }}</a>
+                            {% else %}
+                                <span class="light">#{{ shipment.orderId }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ shipment.carrier ?? '—' }}</td>
+                        <td>{{ shipment.service ?? '—' }}</td>
+                        <td>
+                            {% set url = shipment.getTrackingUrl() %}
+                            {% if url %}
+                                <a href="{{ url }}" rel="noopener noreferrer" target="_blank">{{ shipment.trackingNumber }}</a>
+                            {% else %}
+                                {{ shipment.trackingNumber ?? '—' }}
+                            {% endif %}
+                        </td>
+                        <td>{{ shipment.shipDate ? shipment.shipDate|date('short') : '—' }}</td>
+                        <td>{{ shipment.getShippedQty() ?: '—' }}</td>
+                        <td><span class="light">{{ shipment.source }}</span></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="zilch">
+            <p>{{ 'No shipments yet.'|t('shipper') }}</p>
+            <p class="light">
+                {{ 'Shipments appear here once ShipStation posts a shipment notification to your custom store endpoint.'|t('shipper') }}
+            </p>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% js %}
+(function() {
+    var search = document.getElementById('shipper-search');
+    if (search) {
+        var timer = null;
+        search.addEventListener('input', function() {
+            clearTimeout(timer);
+            timer = setTimeout(function() {
+                var url = new URL(window.location.href);
+                if (search.value) {
+                    url.searchParams.set('search', search.value);
+                } else {
+                    url.searchParams.delete('search');
+                }
+                window.location.href = url.toString();
+            }, 500);
+        });
+    }
+
+    var sync = document.getElementById('shipper-sync');
+    if (sync) {
+        sync.addEventListener('click', function() {
+            sync.classList.add('loading');
+            Craft.sendActionRequest('POST', 'shipper/shipments/sync')
+                .then(function(response) {
+                    Craft.cp.displayNotice(response.data.message || {{ 'Sync requested.'|t('shipper')|json_encode|raw }});
+                })
+                .catch(function(e) {
+                    Craft.cp.displayError((e.response && e.response.data && e.response.data.message) || {{ 'Sync failed.'|t('shipper')|json_encode|raw }});
+                })
+                .finally(function() { sync.classList.remove('loading'); });
+        });
+    }
+})();
+{% endjs %}

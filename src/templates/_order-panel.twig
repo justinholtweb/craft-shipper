@@ -1,0 +1,93 @@
+{#
+    Rendered into Commerce's own order edit screen through the
+    `cp.commerce.order.edit.details` hook.
+#}
+<div class="shipper-panel" style="margin-top: 24px;">
+    <h3 class="shipper-heading">{{ 'ShipStation'|t('shipper') }}</h3>
+
+    {% if shipments|length %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'Carrier'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Tracking'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Shipped'|t('shipper') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shipment in shipments %}
+                    <tr>
+                        <td>
+                            <a href="{{ url('shipper/shipments/' ~ shipment.id) }}">{{ shipment.getLabel() }}</a>
+                        </td>
+                        <td>
+                            {% set trackingUrl = shipment.getTrackingUrl() %}
+                            {% if trackingUrl %}
+                                <a href="{{ trackingUrl }}" rel="noopener noreferrer" target="_blank">{{ shipment.trackingNumber }}</a>
+                            {% else %}
+                                {{ shipment.trackingNumber ?? '—' }}
+                            {% endif %}
+                        </td>
+                        <td>{{ shipment.shipDate ? shipment.shipDate|date('short') : '—' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="light">{{ 'No shipments recorded for this order yet.'|t('shipper') }}</p>
+    {% endif %}
+
+    <p class="light" style="margin-top: 10px;">
+        {% if state.exportCount %}
+            {{ 'Sent to ShipStation {count} times, most recently {date}.'|t('shipper', {
+                count: state.exportCount,
+                date: state.dateLastExported ? state.dateLastExported|datetime('short') : '—'
+            }) }}
+        {% else %}
+            {{ 'Not yet picked up by ShipStation.'|t('shipper') }}
+        {% endif %}
+    </p>
+
+    <div class="buttons" style="margin-top: 10px;">
+        <button type="button" class="btn" data-shipper-preview="{{ order.id }}">{{ 'Preview XML'|t('shipper') }}</button>
+        {% if isPro and canSync %}
+            <button type="button" class="btn" data-shipper-sync>{{ 'Sync now'|t('shipper') }}</button>
+        {% endif %}
+    </div>
+</div>
+
+{% js %}
+(function() {
+    var preview = document.querySelector('[data-shipper-preview]');
+    if (preview) {
+        preview.addEventListener('click', function() {
+            var orderId = preview.getAttribute('data-shipper-preview');
+            Craft.sendActionRequest('GET', 'shipper/shipments/preview', { params: { orderId: orderId } })
+                .then(function(response) {
+                    var modal = document.createElement('div');
+                    modal.className = 'modal elementselectormodal';
+                    modal.style.cssText = 'padding: 24px; overflow: auto;';
+                    var pre = document.createElement('pre');
+                    pre.style.cssText = 'white-space: pre-wrap; word-break: break-word;';
+                    // The payload is XML, so it goes in as text and never as markup.
+                    pre.textContent = response.data.xml;
+                    modal.appendChild(pre);
+                    document.body.appendChild(modal);
+                    new Garnish.Modal(modal, { resizable: true });
+                })
+                .catch(function() { Craft.cp.displayError({{ 'Couldn’t build a preview.'|t('shipper')|json_encode|raw }}); });
+        });
+    }
+
+    var sync = document.querySelector('[data-shipper-sync]');
+    if (sync) {
+        sync.addEventListener('click', function() {
+            sync.classList.add('loading');
+            Craft.sendActionRequest('POST', 'shipper/shipments/sync')
+                .then(function(response) { Craft.cp.displayNotice(response.data.message || {{ 'Sync requested.'|t('shipper')|json_encode|raw }}); })
+                .catch(function(e) { Craft.cp.displayError((e.response && e.response.data && e.response.data.message) || {{ 'Sync failed.'|t('shipper')|json_encode|raw }}); })
+                .finally(function() { sync.classList.remove('loading'); });
+        });
+    }
+})();
+{% endjs %}

@@ -1,0 +1,113 @@
+{% extends '_layouts/cp' %}
+{% import '_includes/forms' as forms %}
+
+{% set title = 'Connection log'|t('shipper') %}
+{% set selectedSubnavItem = 'log' %}
+
+{% block actionButton %}
+    <button type="button" class="btn" id="shipper-prune">{{ 'Prune old entries'|t('shipper') }}</button>
+{% endblock %}
+
+{% block content %}
+    <div class="flex" style="margin-bottom: 14px; gap: 10px;">
+        {{ forms.select({
+            id: 'shipper-action-filter',
+            name: 'action_filter',
+            options: [
+                { label: 'All actions'|t('shipper'), value: '' },
+                { label: 'Export'|t('shipper'), value: 'export' },
+                { label: 'Ship notify'|t('shipper'), value: 'shipnotify' },
+                { label: 'Rates'|t('shipper'), value: 'rates' },
+                { label: 'Store refresh'|t('shipper'), value: 'refresh' },
+                { label: 'Carriers'|t('shipper'), value: 'carriers' }
+            ],
+            value: criteria.action ?? ''
+        }) }}
+
+        {{ forms.select({
+            id: 'shipper-level-filter',
+            name: 'level',
+            options: [
+                { label: 'All levels'|t('shipper'), value: '' },
+                { label: 'Info'|t('shipper'), value: 'info' },
+                { label: 'Warning'|t('shipper'), value: 'warning' },
+                { label: 'Error'|t('shipper'), value: 'error' }
+            ],
+            value: criteria.level ?? ''
+        }) }}
+
+        <span class="light" style="align-self: center;">{{ '{total} entries'|t('shipper', { total: total }) }}</span>
+    </div>
+
+    {% if entries|length %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'When'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Action'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Status'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Time'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Summary'|t('shipper') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                    <tr>
+                        <td class="nowrap">
+                            <a href="{{ url('shipper/log/' ~ entry.id) }}">
+                                {{ entry.dateCreated ? entry.dateCreated|datetime('short') : '—' }}
+                            </a>
+                        </td>
+                        <td>{{ entry.action }}</td>
+                        <td>
+                            <span class="status {{ entry.level == 'error' ? 'red' : (entry.level == 'warning' ? 'orange' : 'green') }}"></span>
+                            {{ entry.statusCode ?? '—' }}
+                        </td>
+                        <td class="light">{{ entry.durationMs is not null ? entry.durationMs ~ 'ms' : '—' }}</td>
+                        <td>{{ entry.summary ?? '' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="zilch">
+            <p>{{ 'Nothing logged yet.'|t('shipper') }}</p>
+            <p class="light">{{ 'Every request ShipStation makes to your endpoint, and every call Shipper sends, shows up here.'|t('shipper') }}</p>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% js %}
+(function() {
+    function reload() {
+        var url = new URL(window.location.href);
+        var action = document.getElementById('shipper-action-filter');
+        var level = document.getElementById('shipper-level-filter');
+
+        if (action && action.value) { url.searchParams.set('action_filter', action.value); }
+        else { url.searchParams.delete('action_filter'); }
+
+        if (level && level.value) { url.searchParams.set('level', level.value); }
+        else { url.searchParams.delete('level'); }
+
+        window.location.href = url.toString();
+    }
+
+    ['shipper-action-filter', 'shipper-level-filter'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) { el.addEventListener('change', reload); }
+    });
+
+    var prune = document.getElementById('shipper-prune');
+    if (prune) {
+        prune.addEventListener('click', function() {
+            Craft.sendActionRequest('POST', 'shipper/log/prune')
+                .then(function(response) {
+                    Craft.cp.displayNotice(response.data.message);
+                    window.location.reload();
+                })
+                .catch(function() { Craft.cp.displayError({{ 'Couldn’t prune the log.'|t('shipper')|json_encode|raw }}); });
+        });
+    }
+})();
+{% endjs %}

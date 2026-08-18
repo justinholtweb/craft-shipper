@@ -1,0 +1,38 @@
+{% extends '_layouts/cp' %}
+
+{% set title = 'Log entry'|t('shipper') %}
+{% set selectedSubnavItem = 'log' %}
+{% set crumbs = [
+    { label: 'Connection log'|t('shipper'), url: url('shipper/log') }
+] %}
+
+{% block content %}
+    <div class="pane">
+        <table class="data fullwidth">
+            <tbody>
+                <tr><th scope="row">{{ 'When'|t('shipper') }}</th><td>{{ entry.dateCreated ? entry.dateCreated|datetime('long') : '—' }}</td></tr>
+                <tr><th scope="row">{{ 'Action'|t('shipper') }}</th><td>{{ entry.action }}</td></tr>
+                <tr><th scope="row">{{ 'Level'|t('shipper') }}</th><td>{{ entry.level }}</td></tr>
+                <tr><th scope="row">{{ 'Status'|t('shipper') }}</th><td>{{ entry.statusCode ?? '—' }}</td></tr>
+                <tr><th scope="row">{{ 'Duration'|t('shipper') }}</th><td>{{ entry.durationMs is not null ? entry.durationMs ~ 'ms' : '—' }}</td></tr>
+                <tr><th scope="row">{{ 'From'|t('shipper') }}</th><td><code>{{ entry.ip ?? '—' }}</code></td></tr>
+                <tr><th scope="row">{{ 'Summary'|t('shipper') }}</th><td>{{ entry.summary ?? '' }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% if entry.message %}
+        <h2>{{ 'Message'|t('shipper') }}</h2>
+        <div class="pane"><pre style="overflow-x: auto;"><code>{{ entry.message }}</code></pre></div>
+    {% endif %}
+
+    {% if entry.request %}
+        <h2>{{ 'Request'|t('shipper') }}</h2>
+        <div class="pane"><pre style="overflow-x: auto;"><code>{{ entry.request }}</code></pre></div>
+    {% endif %}
+
+    {% if entry.response %}
+        <h2>{{ 'Response'|t('shipper') }}</h2>
+        <div class="pane"><pre style="overflow-x: auto; max-height: 480px;"><code>{{ entry.response }}</code></pre></div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends '_layouts/cp' %}
+
+{% set title = 'Shipment'|t('shipper') %}
+{% set selectedSubnavItem = 'shipments' %}
+{% set crumbs = [
+    { label: 'Shipments'|t('shipper'), url: url('shipper/shipments') }
+] %}
+
+{% block content %}
+    <div class="pane">
+        <table class="data fullwidth">
+            <tbody>
+                <tr>
+                    <th scope="row">{{ 'Order'|t('shipper') }}</th>
+                    <td>
+                        {% if order %}
+                            <a href="{{ order.getCpEditUrl() }}">{{ order.reference ?? order.shortNumber }}</a>
+                        {% else %}
+                            <span class="light">#{{ shipment.orderId }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr><th scope="row">{{ 'Carrier'|t('shipper') }}</th><td>{{ shipment.carrier ?? '—' }}</td></tr>
+                <tr><th scope="row">{{ 'Service'|t('shipper') }}</th><td>{{ shipment.service ?? '—' }}</td></tr>
+                <tr>
+                    <th scope="row">{{ 'Tracking'|t('shipper') }}</th>
+                    <td>
+                        {% set url = shipment.getTrackingUrl() %}
+                        {% if url %}
+                            <a href="{{ url }}" rel="noopener noreferrer" target="_blank">{{ shipment.trackingNumber }}</a>
+                        {% else %}
+                            {{ shipment.trackingNumber ?? '—' }}
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr><th scope="row">{{ 'Ship date'|t('shipper') }}</th><td>{{ shipment.shipDate ? shipment.shipDate|datetime('short') : '—' }}</td></tr>
+                <tr><th scope="row">{{ 'Source'|t('shipper') }}</th><td>{{ shipment.source }}</td></tr>
+                <tr><th scope="row">{{ 'Recorded'|t('shipper') }}</th><td>{{ shipment.dateCreated ? shipment.dateCreated|datetime('short') : '—' }}</td></tr>
+                <tr><th scope="row">{{ 'Shipment key'|t('shipper') }}</th><td><code>{{ shipment.shipmentKey }}</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% set items = shipment.getItems() %}
+    {% if items|length %}
+        <h2>{{ 'Items'|t('shipper') }}</h2>
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'SKU'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Name'|t('shipper') }}</th>
+                    <th scope="col">{{ 'Quantity'|t('shipper') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                    <tr>
+                        <td><code>{{ item.sku ?? '' }}</code></td>
+                        <td>{{ item.name ?? '' }}</td>
+                        <td>{{ item.qty ?? 0 }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    {% if shipment.rawPayload %}
+        <h2>{{ 'Payload'|t('shipper') }}</h2>
+        <div class="pane"><pre style="overflow-x: auto;"><code>{{ shipment.rawPayload }}</code></pre></div>
+    {% endif %}
+
+    {% if canManage %}
+        <div class="field">
+            <button type="button" class="btn delete" id="shipper-delete">{{ 'Delete shipment'|t('shipper') }}</button>
+        </div>
+
+        {% js %}
+        (function() {
+            var button = document.getElementById('shipper-delete');
+            if (!button) return;
+            button.addEventListener('click', function() {
+                Craft.sendActionRequest('POST', 'shipper/shipments/delete', { data: { shipmentId: {{ shipment.id }} } })
+                    .then(function() { window.location.href = {{ url('shipper/shipments')|json_encode|raw }}; })
+                    .catch(function() { Craft.cp.displayError({{ 'Couldn’t delete the shipment.'|t('shipper')|json_encode|raw }}); });
+            });
+        })();
+        {% endjs %}
+    {% endif %}
+{% endblock %}

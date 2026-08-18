@@ -1,0 +1,558 @@
+{% import '_includes/forms' as forms %}
+
+{% set isPro = plugin.isPro() %}
+{% set commerceReady = craft.app.plugins.isPluginEnabled('commerce') %}
+{% set statusOptions = commerceReady ? plugin.statuses.getStatusOptions() : {} %}
+
+{% set statusList = [] %}
+{% for handle, name in statusOptions %}
+    {% set statusList = statusList|merge([{ label: name, value: handle }]) %}
+{% endfor %}
+
+{% if not commerceReady %}
+    <div class="pane">
+        <p class="error">{{ 'Craft Commerce is not installed or enabled. Shipper needs it to do anything.'|t('shipper') }}</p>
+    </div>
+{% endif %}
+
+{% if not isPro %}
+    <div class="pane" style="border-left: 3px solid #cdd8e4;">
+        <p>
+            <strong>{{ 'You’re running Shipper Lite.'|t('shipper') }}</strong>
+            {{ 'The connection log, partial shipments, status mapping, live checkout rates and the ShipStation API are Pro features. Settings for them are shown below but have no effect until you upgrade.'|t('shipper') }}
+        </p>
+    </div>
+{% endif %}
+
+{# ------------------------------------------------------------------ #}
+<h2>{{ 'Connection'|t('shipper') }}</h2>
+
+<div class="pane">
+    <p>{{ 'Add a “Custom Store” in ShipStation and paste this URL into it, together with the username and password below.'|t('shipper') }}</p>
+
+    {{ forms.textField({
+        label: 'URL to Custom XML Page'|t('shipper'),
+        instructions: 'Copy this into ShipStation’s custom store setup.'|t('shipper'),
+        id: 'shipper-endpoint',
+        value: settings.getEndpointUrl(),
+        readonly: true,
+        class: 'code'
+    }) }}
+
+    {% if not settings.hasCredentials() %}
+        <p class="warning">
+            {{ 'No credentials are configured yet, so the endpoint rejects every request. Set a username and password, or generate an auth key.'|t('shipper') }}
+        </p>
+    {% endif %}
+</div>
+
+{{ forms.autosuggestField({
+    label: 'Username'|t('shipper'),
+    instructions: 'The username you give ShipStation. Not a Craft user — it exists only for this endpoint.'|t('shipper'),
+    id: 'username',
+    name: 'settings[username]',
+    value: settings.username,
+    suggestEnvVars: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Password'|t('shipper'),
+    instructions: 'The matching password.'|t('shipper'),
+    id: 'password',
+    name: 'settings[password]',
+    value: settings.password,
+    suggestEnvVars: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Auth key'|t('shipper'),
+    instructions: 'Optional. Accepted as an `auth_key` query parameter instead of HTTP Basic — useful on Apache, which frequently strips the Authorization header. Append `?auth_key=…` to the URL you give ShipStation.'|t('shipper'),
+    id: 'authKey',
+    name: 'settings[authKey]',
+    value: settings.authKey,
+    suggestEnvVars: true
+}) }}
+
+<div class="field">
+    <button type="button" class="btn" id="shipper-generate-key">{{ 'Generate a key'|t('shipper') }}</button>
+    <span class="light" id="shipper-generate-key-note"></span>
+</div>
+
+{# ------------------------------------------------------------------ #}
+<hr>
+<h2>{{ 'Export'|t('shipper') }}</h2>
+
+{{ forms.checkboxSelectField({
+    label: 'Export order statuses'|t('shipper'),
+    instructions: 'Which orders ShipStation should see. Leave everything unchecked to export every completed order.'|t('shipper'),
+    id: 'exportStatusHandles',
+    name: 'settings[exportStatusHandles]',
+    options: statusList,
+    values: settings.exportStatusHandles
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Only completed orders'|t('shipper'),
+    instructions: 'Keep live carts out of ShipStation. Turning this off will export abandoned carts.'|t('shipper'),
+    id: 'exportOnlyCompleted',
+    name: 'settings[exportOnlyCompleted]',
+    on: settings.exportOnlyCompleted
+}) }}
+
+{{ forms.selectField({
+    label: 'Order number'|t('shipper'),
+    instructions: 'Which identifier ShipStation shows, and sends back on a shipment notification.'|t('shipper'),
+    id: 'orderNumberSource',
+    name: 'settings[orderNumberSource]',
+    options: [
+        { label: 'Order reference (e.g. 1042)'|t('shipper'), value: 'reference' },
+        { label: 'Order number (the long hash)'|t('shipper'), value: 'number' },
+        { label: 'Short order number (first 7 characters)'|t('shipper'), value: 'shortNumber' },
+        { label: 'Element ID'|t('shipper'), value: 'id' }
+    ],
+    value: settings.orderNumberSource
+}) }}
+
+{{ forms.textField({
+    label: 'Orders per page'|t('shipper'),
+    instructions: 'ShipStation pages through the export. Lower this if the endpoint times out on large windows.'|t('shipper'),
+    id: 'pageSize',
+    name: 'settings[pageSize]',
+    value: settings.pageSize,
+    type: 'number',
+    size: 5,
+    errors: settings.getErrors('pageSize')
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Send product images'|t('shipper'),
+    instructions: 'Include the first image found on each purchasable, so ShipStation’s pick lists have thumbnails.'|t('shipper'),
+    id: 'includeProductImages',
+    name: 'settings[includeProductImages]',
+    on: settings.includeProductImages
+}) }}
+
+{{ forms.textField({
+    label: 'Image transform'|t('shipper'),
+    instructions: 'Optional named transform handle to apply to those images.'|t('shipper'),
+    id: 'imageTransform',
+    name: 'settings[imageTransform]',
+    value: settings.imageTransform
+}) }}
+
+{{ forms.textField({
+    label: 'Phone field handle'|t('shipper'),
+    instructions: 'Craft 5 addresses have no phone attribute. If you added a custom field for one, give its handle here and Shipper will send it.'|t('shipper'),
+    id: 'phoneFieldHandle',
+    name: 'settings[phoneFieldHandle]',
+    value: settings.phoneFieldHandle
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Send discounts as a line'|t('shipper'),
+    instructions: 'Adds a “Total Discount” adjustment line so ShipStation’s order total reconciles with Craft’s.'|t('shipper'),
+    id: 'includeDiscountLine',
+    name: 'settings[includeDiscountLine]',
+    on: settings.includeDiscountLine
+}) }}
+
+<div class="field">
+    <button type="button" class="btn" id="shipper-export-count">{{ 'How many orders match?'|t('shipper') }}</button>
+    <span class="light" id="shipper-export-count-note"></span>
+</div>
+
+{% if isPro %}
+    <h3>{{ 'Custom fields'|t('shipper') }}</h3>
+    <p class="light">{{ 'Object templates, rendered against the order. `object` and `order` both refer to it.'|t('shipper') }}</p>
+
+    {{ forms.textField({
+        label: 'CustomField1'|t('shipper'),
+        id: 'customField1',
+        name: 'settings[customField1]',
+        value: settings.customField1,
+        class: 'code'
+    }) }}
+
+    {{ forms.textField({
+        label: 'CustomField2'|t('shipper'),
+        id: 'customField2',
+        name: 'settings[customField2]',
+        value: settings.customField2,
+        class: 'code'
+    }) }}
+
+    {{ forms.textField({
+        label: 'CustomField3'|t('shipper'),
+        id: 'customField3',
+        name: 'settings[customField3]',
+        value: settings.customField3,
+        class: 'code'
+    }) }}
+{% endif %}
+
+{# ------------------------------------------------------------------ #}
+<hr>
+<h2>{{ 'Shipment notifications'|t('shipper') }}</h2>
+
+{{ forms.selectField({
+    label: 'Shipped order status'|t('shipper'),
+    instructions: 'Where an order lands once everything on it has shipped.'|t('shipper'),
+    id: 'shippedStatusHandle',
+    name: 'settings[shippedStatusHandle]',
+    options: [{ label: '—'|t('shipper'), value: '' }]|merge(statusList),
+    value: settings.shippedStatusHandle
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Update the order status'|t('shipper'),
+    instructions: 'Turn this off to record tracking without moving the order — no status emails will be sent.'|t('shipper'),
+    id: 'updateStatusOnShipment',
+    name: 'settings[updateStatusOnShipment]',
+    on: settings.updateStatusOnShipment
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Leave a note on the order'|t('shipper'),
+    instructions: 'Record the carrier and tracking number in the order’s history.'|t('shipper'),
+    id: 'addOrderHistoryNote',
+    name: 'settings[addOrderHistoryNote]',
+    on: settings.addOrderHistoryNote
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Partial shipments'|t('shipper'),
+    instructions: 'Count the items in each shipment and only complete the order once every item has shipped. Without this, the first notification completes the order. **Pro.**'|t('shipper'),
+    id: 'partialShipmentsEnabled',
+    name: 'settings[partialShipmentsEnabled]',
+    on: settings.partialShipmentsEnabled,
+    disabled: not isPro
+}) }}
+
+{{ forms.selectField({
+    label: 'Partly shipped status'|t('shipper'),
+    instructions: 'Optional status for an order with some but not all items shipped. **Pro.**'|t('shipper'),
+    id: 'partiallyShippedStatusHandle',
+    name: 'settings[partiallyShippedStatusHandle]',
+    options: [{ label: '—'|t('shipper'), value: '' }]|merge(statusList),
+    value: settings.partiallyShippedStatusHandle,
+    disabled: not isPro
+}) }}
+
+{# ------------------------------------------------------------------ #}
+{% if isPro %}
+    <hr>
+    <h2>{{ 'Status mapping'|t('shipper') }}</h2>
+    <p class="light">
+        {{ 'By default Shipper sends the Commerce status handle straight through and you map it inside ShipStation. Map it here instead if you would rather keep that in Craft.'|t('shipper') }}
+    </p>
+
+    {% set shipStationStatuses = {
+        awaiting_payment: 'Awaiting payment'|t('shipper'),
+        awaiting_shipment: 'Awaiting shipment'|t('shipper'),
+        on_hold: 'On hold'|t('shipper'),
+        shipped: 'Shipped'|t('shipper'),
+        cancelled: 'Cancelled'|t('shipper')
+    } %}
+
+    {% for key, label in shipStationStatuses %}
+        {{ forms.checkboxSelectField({
+            label: label,
+            id: 'statusMap-' ~ key,
+            name: 'settings[statusMap][' ~ key ~ ']',
+            options: statusList,
+            values: settings.statusMap[key] ?? []
+        }) }}
+    {% endfor %}
+{% endif %}
+
+{# ------------------------------------------------------------------ #}
+<hr>
+<h2>{{ 'ShipStation API'|t('shipper') }} {% if not isPro %}<span class="light">({{ 'Pro'|t('shipper') }})</span>{% endif %}</h2>
+<p class="light">
+    {{ 'Optional. Lets Shipper ask ShipStation to re-import immediately, and quote live rates at checkout. Orders still reach ShipStation through the custom store above — nothing here duplicates them.'|t('shipper') }}
+</p>
+
+{{ forms.autosuggestField({
+    label: 'API key (v2)'|t('shipper'),
+    instructions: 'From ShipStation → Account → API Settings. Used for rates and carriers.'|t('shipper'),
+    id: 'apiKey',
+    name: 'settings[apiKey]',
+    value: settings.apiKey,
+    suggestEnvVars: true,
+    disabled: not isPro
+}) }}
+
+<div class="field">
+    <button type="button" class="btn" id="shipper-test-connection" {{ not isPro ? 'disabled' : '' }}>{{ 'Test connection'|t('shipper') }}</button>
+    <span class="light" id="shipper-test-connection-note"></span>
+</div>
+
+{{ forms.autosuggestField({
+    label: 'Legacy API key (v1)'|t('shipper'),
+    instructions: 'Only used to trigger a store refresh, which the v2 API cannot do.'|t('shipper'),
+    id: 'legacyApiKey',
+    name: 'settings[legacyApiKey]',
+    value: settings.legacyApiKey,
+    suggestEnvVars: true,
+    disabled: not isPro
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Legacy API secret (v1)'|t('shipper'),
+    id: 'legacyApiSecret',
+    name: 'settings[legacyApiSecret]',
+    value: settings.legacyApiSecret,
+    suggestEnvVars: true,
+    disabled: not isPro
+}) }}
+
+{{ forms.textField({
+    label: 'ShipStation store ID'|t('shipper'),
+    instructions: 'Which store “Sync now” refreshes. Leave blank to refresh every refreshable store on the account.'|t('shipper'),
+    id: 'shipStationStoreId',
+    name: 'settings[shipStationStoreId]',
+    value: settings.shipStationStoreId,
+    disabled: not isPro
+}) }}
+
+{# ------------------------------------------------------------------ #}
+<hr>
+<h2>{{ 'Live rates at checkout'|t('shipper') }} {% if not isPro %}<span class="light">({{ 'Pro'|t('shipper') }})</span>{% endif %}</h2>
+
+{{ forms.lightswitchField({
+    label: 'Enable live rates'|t('shipper'),
+    instructions: 'Offer real carrier rates as Commerce shipping methods. If ShipStation is unreachable, no live methods appear and your own shipping methods are used instead — checkout is never blocked.'|t('shipper'),
+    id: 'liveRatesEnabled',
+    name: 'settings[liveRatesEnabled]',
+    on: settings.liveRatesEnabled,
+    disabled: not isPro
+}) }}
+
+{% set carrierRows = [] %}
+{% for carrierId in settings.rateCarrierIds %}
+    {% set carrierRows = carrierRows|merge([{ value: carrierId }]) %}
+{% endfor %}
+
+{{ forms.editableTableField({
+    label: 'Carriers'|t('shipper'),
+    instructions: 'ShipStation carrier IDs to quote. Leave empty to quote every connected carrier.'|t('shipper'),
+    id: 'rateCarrierIds',
+    name: 'settings[rateCarrierIds]',
+    cols: {
+        value: { heading: 'Carrier ID'|t('shipper'), type: 'singleline', code: true }
+    },
+    rows: carrierRows,
+    addRowLabel: 'Add a carrier'|t('shipper'),
+    allowAdd: isPro,
+    allowDelete: isPro
+}) }}
+
+{% set serviceRows = [] %}
+{% for serviceCode in settings.rateServiceCodes %}
+    {% set serviceRows = serviceRows|merge([{ value: serviceCode }]) %}
+{% endfor %}
+
+{{ forms.editableTableField({
+    label: 'Services'|t('shipper'),
+    instructions: 'Service codes to keep, e.g. `usps_priority_mail`. Leave empty to offer everything quoted.'|t('shipper'),
+    id: 'rateServiceCodes',
+    name: 'settings[rateServiceCodes]',
+    cols: {
+        value: { heading: 'Service code'|t('shipper'), type: 'singleline', code: true }
+    },
+    rows: serviceRows,
+    addRowLabel: 'Add a service'|t('shipper'),
+    allowAdd: isPro,
+    allowDelete: isPro
+}) }}
+
+<h3>{{ 'Ship from'|t('shipper') }}</h3>
+<p class="light">{{ 'The origin carriers quote from.'|t('shipper') }}</p>
+
+{% set shipFromFields = {
+    name: 'Name'|t('shipper'),
+    company: 'Company'|t('shipper'),
+    phone: 'Phone'|t('shipper'),
+    address1: 'Address 1'|t('shipper'),
+    address2: 'Address 2'|t('shipper'),
+    city: 'City'|t('shipper'),
+    state: 'State / province'|t('shipper'),
+    postalCode: 'Postal code'|t('shipper'),
+    countryCode: 'Country code'|t('shipper')
+} %}
+
+{% for key, label in shipFromFields %}
+    {{ forms.textField({
+        label: label,
+        id: 'shipFrom-' ~ key,
+        name: 'settings[shipFrom][' ~ key ~ ']',
+        value: settings.shipFrom[key] ?? '',
+        disabled: not isPro
+    }) }}
+{% endfor %}
+
+{{ forms.selectField({
+    label: 'Markup'|t('shipper'),
+    instructions: 'Add handling to every quoted rate.'|t('shipper'),
+    id: 'rateMarkupType',
+    name: 'settings[rateMarkupType]',
+    options: [
+        { label: 'None'|t('shipper'), value: 'none' },
+        { label: 'Percentage'|t('shipper'), value: 'percent' },
+        { label: 'Flat amount'|t('shipper'), value: 'flat' }
+    ],
+    value: settings.rateMarkupType,
+    disabled: not isPro
+}) }}
+
+{{ forms.textField({
+    label: 'Markup amount'|t('shipper'),
+    id: 'rateMarkupAmount',
+    name: 'settings[rateMarkupAmount]',
+    value: settings.rateMarkupAmount,
+    size: 8,
+    disabled: not isPro
+}) }}
+
+{{ forms.textField({
+    label: 'Default item weight'|t('shipper'),
+    instructions: 'Assumed for a line item with no weight, in your store’s weight units. Carriers reject a zero-weight parcel.'|t('shipper'),
+    id: 'defaultItemWeight',
+    name: 'settings[defaultItemWeight]',
+    value: settings.defaultItemWeight,
+    size: 8,
+    disabled: not isPro
+}) }}
+
+{{ forms.textField({
+    label: 'Package code'|t('shipper'),
+    id: 'packageCode',
+    name: 'settings[packageCode]',
+    value: settings.packageCode,
+    disabled: not isPro
+}) }}
+
+{{ forms.textField({
+    label: 'Quote cache (seconds)'|t('shipper'),
+    instructions: 'How long an identical cart reuses its quote. 0 disables caching, which will make checkout slower and burn API calls.'|t('shipper'),
+    id: 'rateCacheDuration',
+    name: 'settings[rateCacheDuration]',
+    value: settings.rateCacheDuration,
+    type: 'number',
+    size: 6,
+    disabled: not isPro
+}) }}
+
+{{ forms.textField({
+    label: 'Rate timeout (seconds)'|t('shipper'),
+    instructions: 'How long checkout waits on ShipStation before carrying on without live rates.'|t('shipper'),
+    id: 'rateTimeout',
+    name: 'settings[rateTimeout]',
+    value: settings.rateTimeout,
+    type: 'number',
+    size: 6,
+    disabled: not isPro
+}) }}
+
+<div class="field">
+    <button type="button" class="btn" id="shipper-quote" {{ not isPro ? 'disabled' : '' }}>{{ 'Quote the most recent cart'|t('shipper') }}</button>
+    <span class="light" id="shipper-quote-note"></span>
+</div>
+
+{# ------------------------------------------------------------------ #}
+<hr>
+<h2>{{ 'Logging'|t('shipper') }}</h2>
+
+{{ forms.lightswitchField({
+    label: 'Log connections'|t('shipper'),
+    instructions: 'Record every request ShipStation makes and every call Shipper sends.'|t('shipper'),
+    id: 'loggingEnabled',
+    name: 'settings[loggingEnabled]',
+    on: settings.loggingEnabled
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Keep payloads'|t('shipper'),
+    instructions: 'Store request and response bodies. These can contain customer names and addresses. **Pro.**'|t('shipper'),
+    id: 'logPayloads',
+    name: 'settings[logPayloads]',
+    on: settings.logPayloads,
+    disabled: not isPro
+}) }}
+
+{{ forms.textField({
+    label: 'Keep for (days)'|t('shipper'),
+    instructions: '0 keeps everything. Run `shipper/log/prune` from cron to enforce it.'|t('shipper'),
+    id: 'logRetentionDays',
+    name: 'settings[logRetentionDays]',
+    value: settings.logRetentionDays,
+    type: 'number',
+    size: 5
+}) }}
+
+{% js %}
+(function() {
+    function note(id, message, isError) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = message;
+        el.style.color = isError ? '#CF1124' : '';
+    }
+
+    var generate = document.getElementById('shipper-generate-key');
+    if (generate) {
+        generate.addEventListener('click', function() {
+            Craft.sendActionRequest('POST', 'shipper/settings/generate-key')
+                .then(function(response) {
+                    var input = document.getElementById('authKey');
+                    if (input) {
+                        input.value = response.data.key;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    note('shipper-generate-key-note', {{ 'Key generated — save to apply it.'|t('shipper')|json_encode|raw }}, false);
+                })
+                .catch(function() {
+                    note('shipper-generate-key-note', {{ 'Couldn’t generate a key.'|t('shipper')|json_encode|raw }}, true);
+                });
+        });
+    }
+
+    var count = document.getElementById('shipper-export-count');
+    if (count) {
+        count.addEventListener('click', function() {
+            note('shipper-export-count-note', '…', false);
+            Craft.sendActionRequest('GET', 'shipper/settings/export-count')
+                .then(function(response) { note('shipper-export-count-note', response.data.message, !response.data.success); })
+                .catch(function() { note('shipper-export-count-note', {{ 'Couldn’t count orders.'|t('shipper')|json_encode|raw }}, true); });
+        });
+    }
+
+    var test = document.getElementById('shipper-test-connection');
+    if (test) {
+        test.addEventListener('click', function() {
+            note('shipper-test-connection-note', '…', false);
+            Craft.sendActionRequest('POST', 'shipper/settings/test-connection')
+                .then(function(response) { note('shipper-test-connection-note', response.data.message, !response.data.success); })
+                .catch(function(e) { note('shipper-test-connection-note', (e.response && e.response.data && e.response.data.message) || {{ 'Connection failed.'|t('shipper')|json_encode|raw }}, true); });
+        });
+    }
+
+    var quote = document.getElementById('shipper-quote');
+    if (quote) {
+        quote.addEventListener('click', function() {
+            note('shipper-quote-note', '…', false);
+            Craft.sendActionRequest('POST', 'shipper/settings/quote')
+                .then(function(response) {
+                    var data = response.data;
+                    if (data.rates && data.rates.length) {
+                        var parts = data.rates.map(function(r) { return r.name + ' ' + r.total; });
+                        note('shipper-quote-note', parts.join(' · '), false);
+                    } else {
+                        note('shipper-quote-note', (data.errors || []).join(' ') || {{ 'No rates returned.'|t('shipper')|json_encode|raw }}, true);
+                    }
+                })
+                .catch(function() { note('shipper-quote-note', {{ 'Quote failed.'|t('shipper')|json_encode|raw }}, true); });
+        });
+    }
+})();
+{% endjs %}
