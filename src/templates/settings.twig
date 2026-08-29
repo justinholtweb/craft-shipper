@@ -1,3 +1,7 @@
+{# Field names carry no `settings[…]` prefix: `craft\base\Plugin::settingsResponse()` runs this
+   template's output through `View::namespaceInputs(…, 'settings')`, so a name written as
+   `settings[foo]` here posts as `settings[settings][foo]` and saves nothing at all — the screen
+   looks perfect, Craft reports "Plugin settings saved", and every edit is silently discarded. #}
 {% import '_includes/forms' as forms %}
 
 {% set isPro = plugin.isPro() %}
@@ -50,7 +54,7 @@
     label: 'Username'|t('shipper'),
     instructions: 'The username you give ShipStation. Not a Craft user — it exists only for this endpoint.'|t('shipper'),
     id: 'username',
-    name: 'settings[username]',
+    name: 'username',
     value: settings.username,
     suggestEnvVars: true
 }) }}
@@ -59,7 +63,7 @@
     label: 'Password'|t('shipper'),
     instructions: 'The matching password.'|t('shipper'),
     id: 'password',
-    name: 'settings[password]',
+    name: 'password',
     value: settings.password,
     suggestEnvVars: true
 }) }}
@@ -68,7 +72,7 @@
     label: 'Auth key'|t('shipper'),
     instructions: 'Optional. Accepted as an `auth_key` query parameter instead of HTTP Basic — useful on Apache, which frequently strips the Authorization header. Append `?auth_key=…` to the URL you give ShipStation.'|t('shipper'),
     id: 'authKey',
-    name: 'settings[authKey]',
+    name: 'authKey',
     value: settings.authKey,
     suggestEnvVars: true
 }) }}
@@ -86,7 +90,7 @@
     label: 'Export order statuses'|t('shipper'),
     instructions: 'Which orders ShipStation should see. Leave everything unchecked to export every completed order.'|t('shipper'),
     id: 'exportStatusHandles',
-    name: 'settings[exportStatusHandles]',
+    name: 'exportStatusHandles',
     options: statusList,
     values: settings.exportStatusHandles
 }) }}
@@ -95,7 +99,7 @@
     label: 'Only completed orders'|t('shipper'),
     instructions: 'Keep live carts out of ShipStation. Turning this off will export abandoned carts.'|t('shipper'),
     id: 'exportOnlyCompleted',
-    name: 'settings[exportOnlyCompleted]',
+    name: 'exportOnlyCompleted',
     on: settings.exportOnlyCompleted
 }) }}
 
@@ -103,7 +107,7 @@
     label: 'Order number'|t('shipper'),
     instructions: 'Which identifier ShipStation shows, and sends back on a shipment notification.'|t('shipper'),
     id: 'orderNumberSource',
-    name: 'settings[orderNumberSource]',
+    name: 'orderNumberSource',
     options: [
         { label: 'Order reference (e.g. 1042)'|t('shipper'), value: 'reference' },
         { label: 'Order number (the long hash)'|t('shipper'), value: 'number' },
@@ -117,7 +121,7 @@
     label: 'Orders per page'|t('shipper'),
     instructions: 'ShipStation pages through the export. Lower this if the endpoint times out on large windows.'|t('shipper'),
     id: 'pageSize',
-    name: 'settings[pageSize]',
+    name: 'pageSize',
     value: settings.pageSize,
     type: 'number',
     size: 5,
@@ -128,7 +132,7 @@
     label: 'Send product images'|t('shipper'),
     instructions: 'Include the first image found on each purchasable, so ShipStation’s pick lists have thumbnails.'|t('shipper'),
     id: 'includeProductImages',
-    name: 'settings[includeProductImages]',
+    name: 'includeProductImages',
     on: settings.includeProductImages
 }) }}
 
@@ -136,7 +140,7 @@
     label: 'Image transform'|t('shipper'),
     instructions: 'Optional named transform handle to apply to those images.'|t('shipper'),
     id: 'imageTransform',
-    name: 'settings[imageTransform]',
+    name: 'imageTransform',
     value: settings.imageTransform
 }) }}
 
@@ -144,7 +148,7 @@
     label: 'Phone field handle'|t('shipper'),
     instructions: 'Craft 5 addresses have no phone attribute. If you added a custom field for one, give its handle here and Shipper will send it.'|t('shipper'),
     id: 'phoneFieldHandle',
-    name: 'settings[phoneFieldHandle]',
+    name: 'phoneFieldHandle',
     value: settings.phoneFieldHandle
 }) }}
 
@@ -152,7 +156,7 @@
     label: 'Send discounts as a line'|t('shipper'),
     instructions: 'Adds a “Total Discount” adjustment line so ShipStation’s order total reconciles with Craft’s.'|t('shipper'),
     id: 'includeDiscountLine',
-    name: 'settings[includeDiscountLine]',
+    name: 'includeDiscountLine',
     on: settings.includeDiscountLine
 }) }}
 
@@ -168,7 +172,7 @@
     {{ forms.textField({
         label: 'CustomField1'|t('shipper'),
         id: 'customField1',
-        name: 'settings[customField1]',
+        name: 'customField1',
         value: settings.customField1,
         class: 'code'
     }) }}
@@ -176,7 +180,7 @@
     {{ forms.textField({
         label: 'CustomField2'|t('shipper'),
         id: 'customField2',
-        name: 'settings[customField2]',
+        name: 'customField2',
         value: settings.customField2,
         class: 'code'
     }) }}
@@ -184,7 +188,7 @@
     {{ forms.textField({
         label: 'CustomField3'|t('shipper'),
         id: 'customField3',
-        name: 'settings[customField3]',
+        name: 'customField3',
         value: settings.customField3,
         class: 'code'
     }) }}
@@ -198,7 +202,7 @@
     label: 'Shipped order status'|t('shipper'),
     instructions: 'Where an order lands once everything on it has shipped.'|t('shipper'),
     id: 'shippedStatusHandle',
-    name: 'settings[shippedStatusHandle]',
+    name: 'shippedStatusHandle',
     options: [{ label: '—'|t('shipper'), value: '' }]|merge(statusList),
     value: settings.shippedStatusHandle
 }) }}
@@ -207,7 +211,7 @@
     label: 'Update the order status'|t('shipper'),
     instructions: 'Turn this off to record tracking without moving the order — no status emails will be sent.'|t('shipper'),
     id: 'updateStatusOnShipment',
-    name: 'settings[updateStatusOnShipment]',
+    name: 'updateStatusOnShipment',
     on: settings.updateStatusOnShipment
 }) }}
 
@@ -215,7 +219,7 @@
     label: 'Leave a note on the order'|t('shipper'),
     instructions: 'Record the carrier and tracking number in the order’s history.'|t('shipper'),
     id: 'addOrderHistoryNote',
-    name: 'settings[addOrderHistoryNote]',
+    name: 'addOrderHistoryNote',
     on: settings.addOrderHistoryNote
 }) }}
 
@@ -223,7 +227,7 @@
     label: 'Partial shipments'|t('shipper'),
     instructions: 'Count the items in each shipment and only complete the order once every item has shipped. Without this, the first notification completes the order. **Pro.**'|t('shipper'),
     id: 'partialShipmentsEnabled',
-    name: 'settings[partialShipmentsEnabled]',
+    name: 'partialShipmentsEnabled',
     on: settings.partialShipmentsEnabled,
     disabled: not isPro
 }) }}
@@ -232,7 +236,7 @@
     label: 'Partly shipped status'|t('shipper'),
     instructions: 'Optional status for an order with some but not all items shipped. **Pro.**'|t('shipper'),
     id: 'partiallyShippedStatusHandle',
-    name: 'settings[partiallyShippedStatusHandle]',
+    name: 'partiallyShippedStatusHandle',
     options: [{ label: '—'|t('shipper'), value: '' }]|merge(statusList),
     value: settings.partiallyShippedStatusHandle,
     disabled: not isPro
@@ -258,7 +262,7 @@
         {{ forms.checkboxSelectField({
             label: label,
             id: 'statusMap-' ~ key,
-            name: 'settings[statusMap][' ~ key ~ ']',
+            name: 'statusMap[' ~ key ~ ']',
             options: statusList,
             values: settings.statusMap[key] ?? []
         }) }}
@@ -276,7 +280,7 @@
     label: 'API key (v2)'|t('shipper'),
     instructions: 'From ShipStation → Account → API Settings. Used for rates and carriers.'|t('shipper'),
     id: 'apiKey',
-    name: 'settings[apiKey]',
+    name: 'apiKey',
     value: settings.apiKey,
     suggestEnvVars: true,
     disabled: not isPro
@@ -291,7 +295,7 @@
     label: 'Legacy API key (v1)'|t('shipper'),
     instructions: 'Only used to trigger a store refresh, which the v2 API cannot do.'|t('shipper'),
     id: 'legacyApiKey',
-    name: 'settings[legacyApiKey]',
+    name: 'legacyApiKey',
     value: settings.legacyApiKey,
     suggestEnvVars: true,
     disabled: not isPro
@@ -300,7 +304,7 @@
 {{ forms.autosuggestField({
     label: 'Legacy API secret (v1)'|t('shipper'),
     id: 'legacyApiSecret',
-    name: 'settings[legacyApiSecret]',
+    name: 'legacyApiSecret',
     value: settings.legacyApiSecret,
     suggestEnvVars: true,
     disabled: not isPro
@@ -310,7 +314,7 @@
     label: 'ShipStation store ID'|t('shipper'),
     instructions: 'Which store “Sync now” refreshes. Leave blank to refresh every refreshable store on the account.'|t('shipper'),
     id: 'shipStationStoreId',
-    name: 'settings[shipStationStoreId]',
+    name: 'shipStationStoreId',
     value: settings.shipStationStoreId,
     disabled: not isPro
 }) }}
@@ -323,7 +327,7 @@
     label: 'Enable live rates'|t('shipper'),
     instructions: 'Offer real carrier rates as Commerce shipping methods. If ShipStation is unreachable, no live methods appear and your own shipping methods are used instead — checkout is never blocked.'|t('shipper'),
     id: 'liveRatesEnabled',
-    name: 'settings[liveRatesEnabled]',
+    name: 'liveRatesEnabled',
     on: settings.liveRatesEnabled,
     disabled: not isPro
 }) }}
@@ -337,7 +341,7 @@
     label: 'Carriers'|t('shipper'),
     instructions: 'ShipStation carrier IDs to quote. Leave empty to quote every connected carrier.'|t('shipper'),
     id: 'rateCarrierIds',
-    name: 'settings[rateCarrierIds]',
+    name: 'rateCarrierIds',
     cols: {
         value: { heading: 'Carrier ID'|t('shipper'), type: 'singleline', code: true }
     },
@@ -356,7 +360,7 @@
     label: 'Services'|t('shipper'),
     instructions: 'Service codes to keep, e.g. `usps_priority_mail`. Leave empty to offer everything quoted.'|t('shipper'),
     id: 'rateServiceCodes',
-    name: 'settings[rateServiceCodes]',
+    name: 'rateServiceCodes',
     cols: {
         value: { heading: 'Service code'|t('shipper'), type: 'singleline', code: true }
     },
@@ -385,7 +389,7 @@
     {{ forms.textField({
         label: label,
         id: 'shipFrom-' ~ key,
-        name: 'settings[shipFrom][' ~ key ~ ']',
+        name: 'shipFrom[' ~ key ~ ']',
         value: settings.shipFrom[key] ?? '',
         disabled: not isPro
     }) }}
@@ -395,7 +399,7 @@
     label: 'Markup'|t('shipper'),
     instructions: 'Add handling to every quoted rate.'|t('shipper'),
     id: 'rateMarkupType',
-    name: 'settings[rateMarkupType]',
+    name: 'rateMarkupType',
     options: [
         { label: 'None'|t('shipper'), value: 'none' },
         { label: 'Percentage'|t('shipper'), value: 'percent' },
@@ -408,7 +412,7 @@
 {{ forms.textField({
     label: 'Markup amount'|t('shipper'),
     id: 'rateMarkupAmount',
-    name: 'settings[rateMarkupAmount]',
+    name: 'rateMarkupAmount',
     value: settings.rateMarkupAmount,
     size: 8,
     disabled: not isPro
@@ -418,7 +422,7 @@
     label: 'Default item weight'|t('shipper'),
     instructions: 'Assumed for a line item with no weight, in your store’s weight units. Carriers reject a zero-weight parcel.'|t('shipper'),
     id: 'defaultItemWeight',
-    name: 'settings[defaultItemWeight]',
+    name: 'defaultItemWeight',
     value: settings.defaultItemWeight,
     size: 8,
     disabled: not isPro
@@ -427,7 +431,7 @@
 {{ forms.textField({
     label: 'Package code'|t('shipper'),
     id: 'packageCode',
-    name: 'settings[packageCode]',
+    name: 'packageCode',
     value: settings.packageCode,
     disabled: not isPro
 }) }}
@@ -436,7 +440,7 @@
     label: 'Quote cache (seconds)'|t('shipper'),
     instructions: 'How long an identical cart reuses its quote. 0 disables caching, which will make checkout slower and burn API calls.'|t('shipper'),
     id: 'rateCacheDuration',
-    name: 'settings[rateCacheDuration]',
+    name: 'rateCacheDuration',
     value: settings.rateCacheDuration,
     type: 'number',
     size: 6,
@@ -447,7 +451,7 @@
     label: 'Rate timeout (seconds)'|t('shipper'),
     instructions: 'How long checkout waits on ShipStation before carrying on without live rates.'|t('shipper'),
     id: 'rateTimeout',
-    name: 'settings[rateTimeout]',
+    name: 'rateTimeout',
     value: settings.rateTimeout,
     type: 'number',
     size: 6,
@@ -467,7 +471,7 @@
     label: 'Log connections'|t('shipper'),
     instructions: 'Record every request ShipStation makes and every call Shipper sends.'|t('shipper'),
     id: 'loggingEnabled',
-    name: 'settings[loggingEnabled]',
+    name: 'loggingEnabled',
     on: settings.loggingEnabled
 }) }}
 
@@ -475,7 +479,7 @@
     label: 'Keep payloads'|t('shipper'),
     instructions: 'Store request and response bodies. These can contain customer names and addresses. **Pro.**'|t('shipper'),
     id: 'logPayloads',
-    name: 'settings[logPayloads]',
+    name: 'logPayloads',
     on: settings.logPayloads,
     disabled: not isPro
 }) }}
@@ -484,7 +488,7 @@
     label: 'Keep for (days)'|t('shipper'),
     instructions: '0 keeps everything. Run `shipper/log/prune` from cron to enforce it.'|t('shipper'),
     id: 'logRetentionDays',
-    name: 'settings[logRetentionDays]',
+    name: 'logRetentionDays',
     value: settings.logRetentionDays,
     type: 'number',
     size: 5
