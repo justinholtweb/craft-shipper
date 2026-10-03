@@ -23,7 +23,7 @@
     <div class="pane" style="border-left: 3px solid #cdd8e4;">
         <p>
             <strong>{{ 'You’re running Shipper Lite.'|t('shipper') }}</strong>
-            {{ 'The connection log, partial shipments, status mapping, live checkout rates and the ShipStation API are Pro features. Settings for them are shown below but have no effect until you upgrade.'|t('shipper') }}
+            {{ 'The connection log screen, partial shipments, status mapping, custom fields, live checkout rates and Sync now are Pro features. Their settings are disabled or hidden until you upgrade.'|t('shipper') }}
         </p>
     </div>
 {% endif %}
@@ -70,7 +70,7 @@
 
 {{ forms.autosuggestField({
     label: 'Auth key'|t('shipper'),
-    instructions: 'Optional. Accepted as an `auth_key` query parameter instead of HTTP Basic — useful on Apache, which frequently strips the Authorization header. Append `?auth_key=…` to the URL you give ShipStation.'|t('shipper'),
+    instructions: 'Optional. Accepted as an `auth_key` query parameter instead of HTTP Basic — useful on Apache, which frequently strips the Authorization header. Once saved, the URL above includes it.'|t('shipper'),
     id: 'authKey',
     name: 'authKey',
     value: settings.authKey,
@@ -486,12 +486,13 @@
 
 {{ forms.textField({
     label: 'Keep for (days)'|t('shipper'),
-    instructions: '0 keeps everything. Run `shipper/log/prune` from cron to enforce it.'|t('shipper'),
+    instructions: '0 keeps everything. Enforced during Craft’s garbage collection; `shipper/log/prune` runs it on demand.'|t('shipper'),
     id: 'logRetentionDays',
     name: 'logRetentionDays',
     value: settings.logRetentionDays,
     type: 'number',
-    size: 5
+    size: 5,
+    disabled: not isPro
 }) }}
 
 {% js %}

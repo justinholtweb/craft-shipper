@@ -56,7 +56,11 @@ class ApiController extends Controller
         if (!$this->authenticate()) {
             // Deliberately vague: an endpoint that explains *which* half of the credentials was
             // wrong is an oracle for anybody probing it.
-            return $this->fail($action ?: 'export', 401, 'Invalid ShipStation credentials.', $started);
+            // Logged at most once a minute: anyone can hit this URL, and every rejection writing
+            // a row would let them fill the database.
+            $log = Craft::$app->getCache()->add('shipper.log.rejected', true, 60);
+
+            return $this->fail($action ?: 'export', 401, 'Invalid ShipStation credentials.', $started, log: $log);
         }
 
         return match ($action) {
@@ -124,7 +128,7 @@ class ApiController extends Controller
         } catch (\Throwable $e) {
             Craft::error('Shipper export failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString(), __METHOD__);
 
-            return $this->fail('export', 500, 'Export failed: ' . $e->getMessage(), $started);
+            return $this->fail('export', 500, 'Export failed.', $started, detail: $e->getMessage());
         }
 
         Plugin::getInstance()->getLog()->write('export', [
@@ -137,7 +141,7 @@ class ApiController extends Controller
                 'page' => $page,
                 'pages' => $result['pages'],
             ]),
-            'request' => $request->getAbsoluteUrl(),
+            'request' => $this->loggedUrl(),
             'response' => $result['xml'],
         ]);
 
@@ -199,7 +203,7 @@ class ApiController extends Controller
         } catch (\Throwable $e) {
             Craft::error('Shipper shipnotify failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString(), __METHOD__);
 
-            return $this->fail('shipnotify', 500, 'Could not record the shipment: ' . $e->getMessage(), $started, $body);
+            return $this->fail('shipnotify', 500, 'Could not record the shipment.', $started, $body, $e->getMessage());
         }
 
         if ($result['shipment'] === null) {
@@ -219,7 +223,7 @@ class ApiController extends Controller
             'statusCode' => 200,
             'durationMs' => $this->elapsed($started),
             'summary' => $summary,
-            'request' => $request->getAbsoluteUrl() . "\n\n" . $body,
+            'request' => $this->loggedUrl() . "\n\n" . $body,
             'response' => 'OK',
         ]);
 
@@ -313,15 +317,29 @@ class ApiController extends Controller
         return $this->response;
     }
 
-    private function fail(string $action, int $statusCode, string $message, float $started, ?string $body = null): Response
-    {
-        Plugin::getInstance()->getLog()->write($action, [
-            'level' => $statusCode >= 500 ? LogEntry::LEVEL_ERROR : LogEntry::LEVEL_WARNING,
-            'statusCode' => $statusCode,
-            'durationMs' => $this->elapsed($started),
-            'summary' => $message,
-            'request' => Craft::$app->getRequest()->getAbsoluteUrl() . ($body !== null ? "\n\n" . $body : ''),
-        ]);
+    /**
+     * The caller gets `$message`; `$detail` (an exception message, which can carry SQL or paths)
+     * goes to the log only.
+     */
+    private function fail(
+        string $action,
+        int $statusCode,
+        string $message,
+        float $started,
+        ?string $body = null,
+        ?string $detail = null,
+        bool $log = true,
+    ): Response {
+        if ($log) {
+            Plugin::getInstance()->getLog()->write($action, [
+                'level' => $statusCode >= 500 ? LogEntry::LEVEL_ERROR : LogEntry::LEVEL_WARNING,
+                'statusCode' => $statusCode,
+                'durationMs' => $this->elapsed($started),
+                'summary' => $message,
+                'message' => $detail,
+                'request' => $this->loggedUrl() . ($body !== null ? "\n\n" . $body : ''),
+            ]);
+        }
 
         $this->response->setStatusCode($statusCode);
         $this->response->format = Response::FORMAT_JSON;
@@ -331,6 +349,19 @@ class ApiController extends Controller
         ];
 
         return $this->response;
+    }
+
+    /**
+     * The request URL with the auth key masked. The log is readable by anyone with the view-log
+     * permission, which is far weaker than the admin rights the settings screen demands.
+     */
+    private function loggedUrl(): string
+    {
+        return (string)preg_replace(
+            '/([?&]auth_key=)[^&#]*/',
+            '$1***',
+            Craft::$app->getRequest()->getAbsoluteUrl()
+        );
     }
 
     private function elapsed(float $started): int

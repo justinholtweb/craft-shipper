@@ -106,19 +106,25 @@ class Export extends Component
 
         // ShipStation asks for everything modified in a window, and re-asks for overlapping
         // windows; it dedupes on its side by OrderNumber.
+        //
+        // The bounds go in as ISO 8601 with their offset. Element date params read a bare
+        // `Y-m-d H:i:s` as system-timezone time and convert it to UTC themselves, so handing them
+        // an already-UTC string shifts the window by the site's offset and misses recent orders.
         if ($start !== null && $end !== null) {
-            $query->dateUpdated(['and', '>= ' . Db::prepareDateForDb($start), '<= ' . Db::prepareDateForDb($end)]);
+            $query->dateUpdated(['and', '>= ' . $start->format(DATE_ATOM), '<= ' . $end->format(DATE_ATOM)]);
         } elseif ($start !== null) {
-            $query->dateUpdated('>= ' . Db::prepareDateForDb($start));
+            $query->dateUpdated('>= ' . $start->format(DATE_ATOM));
         } elseif ($end !== null) {
-            $query->dateUpdated('<= ' . Db::prepareDateForDb($end));
+            $query->dateUpdated('<= ' . $end->format(DATE_ATOM));
         }
 
         if ($settings->exportStatusHandles !== []) {
             $query->orderStatus($settings->exportStatusHandles);
         }
 
-        $query->orderBy(['commerce_orders.dateUpdated' => SORT_ASC]);
+        // The id breaks ties: a bulk status change stamps many orders with one dateUpdated, and
+        // offset paging over a non-unique sort can skip or repeat orders between pages.
+        $query->orderBy(['commerce_orders.dateUpdated' => SORT_ASC, 'commerce_orders.id' => SORT_ASC]);
 
         return $query;
     }

@@ -17,7 +17,7 @@ class Rate extends Model
     public string $serviceName = '';
 
     /**
-     * Shipping amount in the quote's currency, before any configured markup.
+     * Shipping amount in the quote's currency, with any configured markup already applied.
      */
     public float $amount = 0.0;
 
@@ -48,7 +48,17 @@ class Rate extends Model
      */
     public function getName(): string
     {
-        $name = trim($this->carrierName . ' ' . $this->serviceName);
+        // ShipStation's service names often carry the carrier already ("UPS® Ground"), which
+        // would otherwise reach the checkout as "UPS UPS® Ground".
+        $carrier = trim($this->carrierName);
+        $service = trim($this->serviceName);
+        $bare = static fn(string $value) => strtolower(preg_replace('/[^a-z0-9]/i', '', $value));
+
+        if ($carrier !== '' && str_starts_with($bare($service), $bare($carrier))) {
+            $carrier = '';
+        }
+
+        $name = trim($carrier . ' ' . $service);
 
         return $name !== '' ? $name : ($this->serviceCode ?: 'Shipping');
     }

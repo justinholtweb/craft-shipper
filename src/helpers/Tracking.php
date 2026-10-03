@@ -72,10 +72,12 @@ abstract class Tracking
 
         if ($template === null) {
             // "UPS Ground Saver" and the like: fall back to the longest known key it starts with.
+            $matched = '';
+
             foreach (self::URLS as $candidate => $candidateTemplate) {
-                if (str_starts_with($key, $candidate)) {
+                if (strlen($candidate) > strlen($matched) && str_starts_with($key, $candidate)) {
+                    $matched = $candidate;
                     $template = $candidateTemplate;
-                    break;
                 }
             }
         }

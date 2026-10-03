@@ -26,7 +26,7 @@ Then open **Settings → Plugins → Shipper**, set a username and password, and
 
 ## Editions
 
-| | Lite (free) | Pro |
+| | Lite (free) | Pro ($99, then $79/year) |
 |---|---|---|
 | Custom Store export + shipment notifications | ✅ | ✅ |
 | Shipments stored as data, with a CP index | ✅ | ✅ |
@@ -34,10 +34,11 @@ Then open **Settings → Plugins → Shipper**, set a username and password, and
 | Panel on Commerce's order screen | ✅ | ✅ |
 | `craft.shipper.*` Twig API | ✅ | ✅ |
 | Shipped-status mapping | ✅ | ✅ |
-| Console commands | ✅ | ✅ |
+| Console commands (export, log, sync test) | ✅ | ✅ |
+| `rates/quote` and `sync/refresh` commands | — | ✅ |
 | **Connection log** with request/response payloads | — | ✅ |
 | **Partial shipments** — per-item counting | — | ✅ |
-| **Two-way status mapping** | — | ✅ |
+| **Status mapping** — Commerce statuses to ShipStation's, plus a partly-shipped status | — | ✅ |
 | **Custom field** object templates | — | ✅ |
 | **Sync now** — force a ShipStation re-import | — | ✅ |
 | **Live carrier rates** at checkout | — | ✅ |
@@ -112,7 +113,7 @@ php craft shipper/sync/refresh              # ask ShipStation to re-import now
 php craft shipper/sync/test
 php craft shipper/sync/carriers
 php craft shipper/log/list
-php craft shipper/log/prune                 # point cron at this
+php craft shipper/log/prune                 # also runs on Craft's garbage collection
 ```
 
 `shipper/export/preview` runs the same builder the endpoint does, so a payload that looks right
@@ -120,8 +121,9 @@ there cannot differ in production.
 
 ## Debugging a quiet store
 
-If ShipStation says it imported nothing, open **Shipper → Log**. Every request it made is there
-with its status code, timing, and — on Pro — the full payload both ways. A 401 means the
+If ShipStation says it imported nothing, open **Shipper → Log** on Pro, or run
+`php craft shipper/log/list` on Lite. Every request it made is there with its status code and
+timing, and on Pro the full payload both ways. A 401 means the
 credentials do not match; an empty export means your status filter excludes everything, which
 **How many orders match?** on the settings screen will confirm in one click.
 

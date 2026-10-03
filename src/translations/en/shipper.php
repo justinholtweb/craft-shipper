@@ -5,7 +5,7 @@
  */
 
 return [
-    '0 keeps everything. Run `shipper/log/prune` from cron to enforce it.' => '0 keeps everything. Run `shipper/log/prune` from cron to enforce it.',
+    '0 keeps everything. Enforced during Craft’s garbage collection; `shipper/log/prune` runs it on demand.' => '0 keeps everything. Enforced during Craft’s garbage collection; `shipper/log/prune` runs it on demand.',
     'API key (v2)' => 'API key (v2)',
     'Action' => 'Action',
     'Add a carrier' => 'Add a carrier',
@@ -106,7 +106,7 @@ return [
     'Only used to trigger a store refresh, which the v2 API cannot do.' => 'Only used to trigger a store refresh, which the v2 API cannot do.',
     'Optional named transform handle to apply to those images.' => 'Optional named transform handle to apply to those images.',
     'Optional status for an order with some but not all items shipped. **Pro.**' => 'Optional status for an order with some but not all items shipped. **Pro.**',
-    'Optional. Accepted as an `auth_key` query parameter instead of HTTP Basic — useful on Apache, which frequently strips the Authorization header. Append `?auth_key=…` to the URL you give ShipStation.' => 'Optional. Accepted as an `auth_key` query parameter instead of HTTP Basic — useful on Apache, which frequently strips the Authorization header. Append `?auth_key=…` to the URL you give ShipStation.',
+    'Optional. Accepted as an `auth_key` query parameter instead of HTTP Basic — useful on Apache, which frequently strips the Authorization header. Once saved, the URL above includes it.' => 'Optional. Accepted as an `auth_key` query parameter instead of HTTP Basic — useful on Apache, which frequently strips the Authorization header. Once saved, the URL above includes it.',
     'Optional. Lets Shipper ask ShipStation to re-import immediately, and quote live rates at checkout. Orders still reach ShipStation through the custom store above — nothing here duplicates them.' => 'Optional. Lets Shipper ask ShipStation to re-import immediately, and quote live rates at checkout. Orders still reach ShipStation through the custom store above — nothing here duplicates them.',
     'Order' => 'Order',
     'Order number' => 'Order number',
@@ -184,7 +184,7 @@ return [
     'Sync requested.' => 'Sync requested.',
     'Test connection' => 'Test connection',
     'That shipment was already recorded.' => 'That shipment was already recorded.',
-    'The connection log, partial shipments, status mapping, live checkout rates and the ShipStation API are Pro features. Settings for them are shown below but have no effect until you upgrade.' => 'The connection log, partial shipments, status mapping, live checkout rates and the ShipStation API are Pro features. Settings for them are shown below but have no effect until you upgrade.',
+    'The connection log screen, partial shipments, status mapping, custom fields, live checkout rates and Sync now are Pro features. Their settings are disabled or hidden until you upgrade.' => 'The connection log screen, partial shipments, status mapping, custom fields, live checkout rates and Sync now are Pro features. Their settings are disabled or hidden until you upgrade.',
     'The matching password.' => 'The matching password.',
     'The order has no shipping address, or no shippable items.' => 'The order has no shipping address, or no shippable items.',
     'The origin carriers quote from.' => 'The origin carriers quote from.',
@@ -199,6 +199,7 @@ return [
     'Username' => 'Username',
     'View shipments' => 'View shipments',
     'View the connection log' => 'View the connection log',
+    'Clear and prune the connection log' => 'Clear and prune the connection log',
     'Warning' => 'Warning',
     'When' => 'When',
     'Where an order lands once everything on it has shipped.' => 'Where an order lands once everything on it has shipped.',

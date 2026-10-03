@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<!-- handmade: hand-tuned deck -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shipper — Plugin Store promos</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --charcoal: #0f0f1a;
+    --charcoal-light: #1a1a2e;
+    --charcoal-lighter: #252540;
+    --accent: #8B5E34;
+    --accent-light: #E0B07A;
+    --gold: #ffd166;
+    --off-white: #f0f0f5;
+    --ok: #5ee0a0;
+    --bad: #ff6b6b;
+  }
+
+  html { background: #000; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--off-white);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- slide shell ---------------------------------------------------- */
+  .slide {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 85% 15%, rgba(139, 94, 52, 0.40) 0%, transparent 40%),
+      radial-gradient(ellipse at 65% 5%,  rgba(224, 176, 122, 0.12) 0%, transparent 35%),
+      radial-gradient(ellipse at 15% 85%, rgba(255, 209, 102, 0.07) 0%, transparent 40%),
+      radial-gradient(ellipse at 35% 95%, rgba(139, 94, 52, 0.16) 0%, transparent 35%),
+      linear-gradient(135deg, #0f0f1a 0%, #17120f 30%, #1c1610 60%, #0f0f1a 100%);
+  }
+
+  /* Oversized watermark: the glyph from src/icon-mask.svg, with no tile. Anchored bottom-right,
+     running off the edge. */
+  .slide::after {
+    content: '';
+    position: absolute;
+    top: 40%;
+    right: -26%;
+    width: 1500px;
+    height: 1500px;
+    background: url('assets/watermark.svg') no-repeat center / contain;
+    opacity: 0.025;
+    pointer-events: none;
+  }
+
+  /* The cover has the icon itself; a watermark behind it reads as its shadow. */
+  .cover::after { display: none; }
+
+  .slide::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--gold), var(--accent));
+    z-index: 5;
+  }
+
+  .inner {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    padding: 118px 130px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ---- type ------------------------------------------------------------ */
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: rgba(240, 240, 245, 0.62);
+    margin-bottom: 34px;
+  }
+  .eyebrow .rule {
+    width: 58px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--accent-light);
+  }
+  .eyebrow .pro {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: #fff;
+    background: var(--accent);
+    border-radius: 999px;
+    padding: 6px 14px;
+  }
+
+  h1, h2 {
+    font-family: 'Jersey 20', sans-serif;
+    font-weight: 400;
+    line-height: 0.9;
+    letter-spacing: 0.005em;
+  }
+
+  /* The tile brown is too dark to open a gradient on charcoal, so the text starts a step lighter. */
+  .gradient-text {
+    background: linear-gradient(100deg, #C48A52 0%, #E0B07A 38%, #ffd166 68%, #C48A52 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .lede {
+    font-size: 34px;
+    line-height: 1.5;
+    color: rgba(240, 240, 245, 0.72);
+  }
+
+  .mono { font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; }
+  code, .code { font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; }
+
+  /* ---- cover ----------------------------------------------------------- */
+  .cover .inner { gap: 90px; }
+  .cover .copy { flex: 1 1 auto; }
+  .cover h1 { font-size: 168px; margin-bottom: 26px; }
+  .cover .tagline {
+    font-size: 46px;
+    line-height: 1.25;
+    color: rgba(240, 240, 245, 0.78);
+    margin-bottom: 22px;
+    max-width: 960px;
+  }
+  .cover .lede { font-size: 30px; max-width: 920px; margin-bottom: 46px; color: rgba(240,240,245,0.6); }
+  .cover .badges { display: flex; gap: 18px; align-items: center; }
+  .badge {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 14px 26px;
+    border-radius: 999px;
+    border: 2px solid rgba(224, 176, 122, 0.45);
+    color: rgba(240, 240, 245, 0.85);
+  }
+  .badge.price { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cover .mark { flex: 0 0 auto; }
+  .cover .mark img { width: 420px; height: 420px; display: block; }
+
+  /* ---- feature slides -------------------------------------------------- */
+  .feature .copy { flex: 0 0 auto; }
+  .feature h2 { font-size: 96px; margin-bottom: 30px; }
+
+  .points { list-style: none; margin-top: 40px; display: flex; flex-direction: column; gap: 20px; }
+  .points li {
+    display: flex;
+    gap: 16px;
+    font-size: 25px;
+    line-height: 1.4;
+    color: rgba(240, 240, 245, 0.62);
+  }
+  .points li svg { flex: 0 0 auto; margin-top: 4px; }
+  .points code { font-size: 22px; color: var(--accent-light); }
+
+  /* ---- light Craft 5 CP frame -------------------------------------------
+     Used for the settings screen, the log, the order panel and the shipment detail. Every string
+     inside one is a translation key or a column heading from src/templates/. */
+  .cpframe {
+    position: absolute; right: 100px; top: 50%; transform: translateY(-50%); z-index: 3;
+    width: 1040px; border-radius: 14px; overflow: hidden; background: #e4e9f0;
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 40px 90px rgba(0,0,0,0.55), 0 6px 18px rgba(0,0,0,0.35);
+  }
+  .cpframe .chrome { display: flex; align-items: center; gap: 9px; padding: 13px 18px; background: linear-gradient(180deg, #2a2a3d 0%, #21212f 100%); }
+  .cpframe .chrome b { width: 12px; height: 12px; border-radius: 50%; }
+  .cpframe .chrome b:nth-child(1) { background: #ff5f57; }
+  .cpframe .chrome b:nth-child(2) { background: #febc2e; }
+  .cpframe .chrome b:nth-child(3) { background: #28c840; }
+  .cpframe .chrome em { margin-left: 12px; font-style: normal; font-size: 18px; color: rgba(240,240,245,0.55); }
+  .cpframe .body { padding: 26px; }
+  .cp-title { display: flex; align-items: center; justify-content: space-between; margin: 0 4px 18px; }
+  .cp-title h3 { font-size: 30px; font-weight: 700; color: #1f2933; }
+  .cp-btn { display: inline-block; font-size: 18px; font-weight: 500; color: #3f4d5a; background: #dfe5ec; border-radius: 6px; padding: 10px 18px; }
+  .cp-pane { background: #fff; border-radius: 8px; box-shadow: 0 0 0 1px rgba(31,41,51,0.1), 0 2px 12px rgba(31,41,51,0.08); padding: 26px 28px; color: #3f4d5a; }
+  .cp-pane + .cp-pane { margin-top: 18px; }
+  .cp-pane h4 { font-size: 24px; font-weight: 700; color: #1f2933; margin-bottom: 16px; }
+  .cp-pane p { font-size: 20px; line-height: 1.45; }
+  .cp-light { color: #6b7783; }
+  .cp-table { width: 100%; border-collapse: collapse; font-size: 19px; }
+  .cp-table th { text-align: left; font-weight: 600; color: #5f6c7b; background: #f3f6f9; padding: 11px 12px; border-bottom: 1px solid #e3e8ee; white-space: nowrap; }
+  .cp-table td { padding: 13px 12px; border-bottom: 1px solid #eef1f4; color: #33404c; vertical-align: top; }
+  .cp-table tr:last-child td { border-bottom: 0; }
+  .cp-table .nowrap { white-space: nowrap; }
+  .cp-table a, .cp-link { color: #2563d4; text-decoration: none; }
+  .cp-table code { font-size: 17px; }
+  .cp-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
+  .cp-dot.green { background: #27ab83; }
+  .cp-dot.orange { background: #f2a60d; }
+  .cp-dot.red { background: #cf1124; }
+  .cp-select { display: inline-flex; align-items: center; gap: 14px; font-size: 18px; color: #33404c; background: #fff; border: 1px solid #cdd8e4; border-radius: 6px; padding: 8px 14px; }
+  .cp-select::after { content: '▾'; color: #7b8793; font-size: 15px; }
+  .cp-row-hl td { background: #fff8eb; }
+
+  /* settings fields (slide 2) */
+  .cp-field { margin-top: 22px; }
+  .cp-field:first-child { margin-top: 0; }
+  .cp-field label { display: block; font-size: 20px; font-weight: 700; color: #1f2933; }
+  .cp-field .inst { font-size: 17px; color: #6b7783; margin-top: 4px; line-height: 1.4; }
+  .cp-field .inst code { font-size: 15px; background: #eef1f4; padding: 1px 5px; border-radius: 4px; }
+  .cp-input { margin-top: 10px; font-size: 19px; color: #33404c; background: #f3f6f9; border: 1px solid #cdd8e4; border-radius: 6px; padding: 12px 14px; }
+  .cp-input.code { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 18px; }
+  .cp-input.url { background: #fffdf8; border: 2px solid #E0B07A; box-shadow: 0 0 0 4px rgba(224,176,122,0.25); color: #1f2933; }
+  .cp-input.url b { color: #8B5E34; font-weight: 600; }
+  .cp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+  /* code block (slide 7) */
+  .codebox {
+    position: absolute; right: 100px; top: 50%; transform: translateY(-50%); z-index: 3;
+    width: 1060px; border-radius: 14px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.09); background: rgba(12,12,20,0.88);
+    box-shadow: 0 40px 90px rgba(0,0,0,0.5);
+  }
+  .codebox .tab { padding: 14px 24px; font-size: 18px; color: rgba(240,240,245,0.5); border-bottom: 1px solid rgba(255,255,255,0.07); font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; }
+  .codebox pre { padding: 26px 30px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 21px; line-height: 1.55; color: rgba(240,240,245,0.85); }
+  .codebox .t { color: #c792ea; }   /* twig tags */
+  .codebox .v { color: var(--accent-light); }
+  .codebox .s { color: #a5e3a0; }
+  .codebox .h { color: #7fb7ff; }
+  .codebox .c { color: rgba(240,240,245,0.38); }
+  .codebox .out { border-top: 1px solid rgba(255,255,255,0.07); background: #fbf8f4; color: #2a2420; padding: 22px 30px; }
+  .codebox .out .lbl { font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase; color: #8a7d72; font-weight: 600; margin-bottom: 12px; }
+  .codebox .out .ship { display: flex; align-items: baseline; gap: 18px; font-size: 22px; }
+  .codebox .out .ship b { font-weight: 700; }
+  .codebox .out .ship a { color: #8B5E34; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 20px; }
+  .codebox .out .bar { height: 12px; border-radius: 999px; background: #ece4da; margin-top: 16px; overflow: hidden; }
+  .codebox .out .bar i { display: block; height: 100%; width: 66.7%; background: #8B5E34; border-radius: 999px; }
+  .codebox .out .prog { margin-top: 10px; font-size: 20px; color: #5a4e44; }
+
+  /* checkout (slide 6) */
+  .checkout { position: absolute; right: 100px; top: 50%; transform: translateY(-50%); z-index: 3; width: 1040px; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  .co { border-radius: 16px; overflow: hidden; background: #fbf8f4; color: #2a2420; box-shadow: 0 40px 90px rgba(0,0,0,0.55), 0 6px 18px rgba(0,0,0,0.35); }
+  .co .hd { padding: 20px 26px; font-size: 16px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .co .hd.up { background: #e3f4ea; color: #1f7a4d; }
+  .co .hd.down { background: #fdeceb; color: #b4231b; }
+  .co .hd i { width: 11px; height: 11px; border-radius: 50%; background: currentColor; }
+  .co h3 { font-size: 26px; font-weight: 700; padding: 22px 26px 8px; }
+  .co .m { display: flex; gap: 14px; align-items: flex-start; margin: 10px 20px; padding: 14px 16px; border: 2px solid #eadfd4; border-radius: 12px; background: #fff; }
+  .co .m.on { border-color: #8B5E34; box-shadow: 0 0 0 3px rgba(139,94,52,0.14); }
+  .co .m .r { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #b9a998; margin-top: 2px; }
+  .co .m.on .r { border: 7px solid #8B5E34; }
+  .co .m .n { flex: 1 1 auto; font-size: 20px; font-weight: 600; line-height: 1.25; }
+  .co .m .n small { display: block; font-size: 16px; font-weight: 400; color: #7d6f63; margin-top: 3px; }
+  .co .m .p { font-size: 20px; font-weight: 700; }
+  .co .m .tag { display: inline-block; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: #8B5E34; background: #f4e8da; border-radius: 4px; padding: 2px 6px; margin-left: 6px; vertical-align: 2px; }
+  .co .pay { margin: 18px 20px 22px; text-align: center; background: #8B5E34; color: #fff; font-size: 21px; font-weight: 700; padding: 16px; border-radius: 10px; }
+  .co .note { margin: 0 26px 8px; font-size: 16px; color: #7d6f63; line-height: 1.4; }
+
+  /* retry timeline (slide 5) */
+  .retry { position: absolute; right: 100px; top: 50%; transform: translateY(-50%); z-index: 3; width: 1060px; }
+  .req { border-radius: 14px; border: 1px solid rgba(255,255,255,0.09); background: rgba(15,15,26,0.8); padding: 24px 30px; }
+  .req + .req { margin-top: 18px; }
+  .req .top { display: flex; align-items: center; gap: 16px; font-size: 20px; color: rgba(240,240,245,0.55); }
+  .req .top b { color: var(--off-white); font-weight: 600; }
+  .req .top .st { margin-left: auto; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 20px; padding: 4px 12px; border-radius: 6px; }
+  .req .top .st.new { background: rgba(94,224,160,0.14); color: var(--ok); }
+  .req .top .st.dup { background: rgba(224,176,122,0.16); color: var(--accent-light); }
+  .req .url { margin-top: 12px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 19px; color: rgba(240,240,245,0.6); word-break: break-all; line-height: 1.5; }
+  .req .url em { font-style: normal; color: var(--off-white); }
+  .req .url .k { color: var(--accent-light); }
+  .req .key { margin-top: 14px; display: flex; align-items: center; gap: 14px; font-size: 19px; color: rgba(240,240,245,0.55); }
+  .req .key code { font-size: 21px; color: var(--gold); background: rgba(255,209,102,0.08); border: 1px solid rgba(255,209,102,0.25); padding: 5px 12px; border-radius: 6px; }
+  .req .sum { margin-top: 12px; font-size: 22px; color: var(--off-white); }
+  .req .sum.dim { color: rgba(240,240,245,0.75); }
+  .gap { display: flex; align-items: center; gap: 14px; margin: 14px 0 14px 30px; font-size: 19px; color: rgba(240,240,245,0.45); }
+  .gap::before { content: ''; width: 2px; height: 30px; background: rgba(224,176,122,0.45); }
+  .count { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .count div { border-radius: 12px; border: 1px solid rgba(224,176,122,0.3); background: rgba(139,94,52,0.14); padding: 16px 20px; font-size: 19px; color: rgba(240,240,245,0.6); }
+  .count b { display: block; font-family: 'Jersey 20', sans-serif; font-weight: 400; font-size: 52px; line-height: 1; color: var(--off-white); margin-bottom: 4px; }
+
+  /* ---- closing: editions (slide 8) ------------------------------------- */
+  .closing .inner { flex-direction: column; align-items: flex-start; justify-content: center; }
+  .closing h2 { font-size: 100px; margin-bottom: 20px; }
+  .closing .lede { font-size: 30px; max-width: 1400px; margin-bottom: 44px; }
+  .closing .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 1660px; }
+  .closing .col { border-radius: 16px; border: 1px solid rgba(255,255,255,0.09); background: rgba(37,37,64,0.42); padding: 34px 38px; }
+  .closing .col.pro { border-color: rgba(224,176,122,0.45); background: rgba(139,94,52,0.16); }
+  .closing .col h3 { display: flex; align-items: baseline; gap: 16px; font-family: 'Jersey 20', sans-serif; font-weight: 400; font-size: 60px; line-height: 1; margin-bottom: 20px; }
+  .closing .col h3 small { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 600; letter-spacing: 0.04em; color: rgba(240,240,245,0.55); }
+  .closing .col.pro h3 small { color: var(--accent-light); }
+  .closing .col ul { list-style: none; display: flex; flex-direction: column; gap: 13px; }
+  .closing .col li { display: flex; gap: 14px; font-size: 24px; line-height: 1.4; color: rgba(240,240,245,0.72); }
+  .closing .col li svg { flex: 0 0 auto; margin-top: 5px; }
+  .closing .col li code { font-size: 21px; color: var(--accent-light); }
+
+  /* ---- footer lockup --------------------------------------------------- */
+  .footer {
+    position: absolute;
+    left: 130px;
+    bottom: 54px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 22px;
+    color: rgba(240, 240, 245, 0.42);
+  }
+  .footer img { width: 40px; height: 40px; border-radius: 9px; }
+  .footer b { color: rgba(240, 240, 245, 0.72); font-weight: 600; }
+
+  /* Only render the requested slide when screenshotting */
+  body.single .slide { display: none; }
+  body.single .slide.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- 1 · Cover ============================================================ -->
+<section class="slide cover" data-n="1">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> Craft Commerce 5</div>
+      <h1 class="gradient-text">Shipper</h1>
+      <p class="tagline">ShipStation integration for Craft Commerce.</p>
+      <p class="lede">Orders go out, tracking comes back, and every request either end makes is on a screen you can read.</p>
+      <div class="badges">
+        <span class="badge price">Free · Pro $99</span>
+        <span class="badge">Craft 5.3+ · Commerce 5 · PHP 8.2+</span>
+      </div>
+    </div>
+    <div class="mark"><img src="assets/icon.svg" alt=""></div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Shipper</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-shipper</div>
+</section>
+
+<!-- 2 · Paste one URL ===================================================== -->
+<section class="slide feature" data-n="2">
+  <div class="inner">
+    <div class="copy" style="width: 600px;">
+      <div class="eyebrow"><span class="rule"></span> Setup</div>
+      <h2 style="font-size: 84px;">Paste one URL<br>into ShipStation</h2>
+      <p class="lede" style="max-width: 580px;">Shipments are Shipper's own data. No field to build, no Matrix, no handles to type into settings.</p>
+      <ul class="points">
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>An <code>auth_key</code> fallback for Apache, which strips the Authorization header</span></li>
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>No credentials, no orders: an unconfigured endpoint rejects everything</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="cpframe" style="width: 1060px;">
+    <div class="chrome"><b></b><b></b><b></b><em>Settings → Plugins → Shipper</em></div>
+    <div class="body">
+      <div class="cp-title"><h3>Connection</h3></div>
+      <div class="cp-pane">
+        <p class="cp-light" style="margin-bottom: 18px;">Add a “Custom Store” in ShipStation and paste this URL into it, together with the username and password below.</p>
+        <div class="cp-field">
+          <label>URL to Custom XML Page</label>
+          <div class="inst">Copy this into ShipStation’s custom store setup.</div>
+          <div class="cp-input code url">https://shop.example.com/actions/shipper/api/process<b>?auth_key=c41f9e07d2b8</b></div>
+        </div>
+      </div>
+      <div class="cp-pane">
+        <div class="cp-grid">
+          <div class="cp-field">
+            <label>Username</label>
+            <div class="inst">The username you give ShipStation. Not a Craft user.</div>
+            <div class="cp-input code">$SHIPSTATION_USER</div>
+          </div>
+          <div class="cp-field" style="margin-top: 0;">
+            <label>Password</label>
+            <div class="inst">The matching password.</div>
+            <div class="cp-input code">$SHIPSTATION_PASS</div>
+          </div>
+        </div>
+        <div class="cp-field">
+          <label>Auth key</label>
+          <div class="inst">Optional. Accepted as an <code>auth_key</code> query parameter instead of HTTP Basic — useful on Apache, which frequently strips the Authorization header.</div>
+          <div style="display: flex; gap: 14px; align-items: center;">
+            <div class="cp-input code" style="flex: 1 1 auto;">c41f9e07d2b8</div>
+            <span class="cp-btn" style="margin-top: 10px;">Generate a key</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Shipper</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-shipper</div>
+</section>
+
+<!-- 3 · Connection log (Pro) ============================================= -->
+<section class="slide feature" data-n="3">
+  <div class="inner">
+    <div class="copy" style="width: 560px;">
+      <div class="eyebrow"><span class="rule"></span> Connection log <span class="pro">Pro</span></div>
+      <h2>Every request,<br>on a screen</h2>
+      <p class="lede" style="max-width: 540px;">When ShipStation imports nothing, you can see why.</p>
+      <ul class="points">
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Status codes, timings and payloads both ways</span></li>
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>The auth key is masked as <code>auth_key=***</code></span></li>
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Rejected 401s logged at most once a minute, so nobody can flood it</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="cpframe" style="width: 1100px;">
+    <div class="chrome"><b></b><b></b><b></b><em>Shipper → Log</em></div>
+    <div class="body">
+      <div class="cp-title"><h3>Connection log</h3><span class="cp-btn">Prune old entries</span></div>
+      <div style="display: flex; gap: 10px; align-items: center; margin: 0 4px 14px;">
+        <span class="cp-select">All actions</span>
+        <span class="cp-select">All levels</span>
+        <span class="cp-light" style="font-size: 18px; margin-left: 6px;">6 entries</span>
+      </div>
+      <div class="cp-pane" style="padding: 8px 10px;">
+        <table class="cp-table">
+          <thead><tr><th>When</th><th>Action</th><th>Status</th><th>Time</th><th>Summary</th></tr></thead>
+          <tbody>
+            <tr><td class="nowrap"><a>10/3/26, 9:14 AM</a></td><td>export</td><td class="nowrap"><span class="cp-dot green"></span>200</td><td class="cp-light nowrap">142ms</td><td>Exported 3 of 3 orders (page 1 of 1)</td></tr>
+            <tr><td class="nowrap"><a>10/3/26, 9:02 AM</a></td><td>shipnotify</td><td class="nowrap"><span class="cp-dot green"></span>200</td><td class="cp-light nowrap">31ms</td><td>Duplicate shipment for order 1042 ignored</td></tr>
+            <tr><td class="nowrap"><a>10/3/26, 8:31 AM</a></td><td>rates</td><td class="nowrap"><span class="cp-dot green"></span>200</td><td class="cp-light nowrap">612ms</td><td>Quoted 6 rates</td></tr>
+            <tr><td class="nowrap"><a>10/3/26, 8:02 AM</a></td><td>shipnotify</td><td class="nowrap"><span class="cp-dot green"></span>200</td><td class="cp-light nowrap">214ms</td><td>Recorded shipment for order 1042 (UPS 1Z999AA10123456784)</td></tr>
+            <tr class="cp-row-hl"><td class="nowrap"><a>10/3/26, 7:58 AM</a></td><td>export</td><td class="nowrap"><span class="cp-dot orange"></span>401</td><td class="cp-light nowrap">3ms</td><td>Invalid ShipStation credentials.</td></tr>
+            <tr><td class="nowrap"><a>10/3/26, 7:45 AM</a></td><td>refresh</td><td class="nowrap"><span class="cp-dot green"></span>200</td><td class="cp-light nowrap">390ms</td><td>Store refresh requested</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cp-pane" style="padding: 18px 24px;">
+        <div style="font-size: 17px; font-weight: 700; color: #1f2933; margin-bottom: 8px;">Request</div>
+        <code style="font-size: 17px; color: #33404c; word-break: break-all;">https://shop.example.com/actions/shipper/api/process?action=export&amp;<b style="color:#8B5E34;">auth_key=***</b><br>&amp;start_date=10%2F03%2F2026+07%3A00&amp;end_date=10%2F03%2F2026+07%3A58&amp;page=1</code>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Shipper</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-shipper</div>
+</section>
+
+<!-- 4 · Partial shipments (Pro) ========================================== -->
+<section class="slide feature" data-n="4">
+  <div class="inner">
+    <div class="copy" style="width: 560px;">
+      <div class="eyebrow"><span class="rule"></span> Partial shipments <span class="pro">Pro</span></div>
+      <h2>Two parcels,<br>one order</h2>
+      <p class="lede" style="max-width: 540px;">Shipper counts the items in each shipment and completes the order only when every unit has gone.</p>
+      <ul class="points">
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Until then it sits in a “partly shipped” status of your choosing</span></li>
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Each parcel's items and tracking go in the order history</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="cpframe" style="width: 1080px;">
+    <div class="chrome"><b></b><b></b><b></b><em>Commerce → Orders → #1042</em></div>
+    <div class="body">
+      <div class="cp-pane">
+        <h4>ShipStation</h4>
+        <table class="cp-table">
+          <thead><tr><th>Carrier</th><th>Tracking</th><th>Shipped</th></tr></thead>
+          <tbody>
+            <tr><td><a>UPS Ground</a></td><td><a class="code">1Z999AA10123456784</a></td><td>10/1/26</td></tr>
+            <tr><td><a>USPS Priority Mail</a></td><td><a class="code">9405511899223197428490</a></td><td>10/3/26</td></tr>
+          </tbody>
+        </table>
+        <p class="cp-light" style="margin-top: 14px; font-size: 18px;">Sent to ShipStation 4 times, most recently 10/3/26, 9:14 AM.</p>
+        <div style="margin-top: 14px; display: flex; gap: 10px;"><span class="cp-btn">Preview XML</span><span class="cp-btn">Sync now</span></div>
+      </div>
+      <div class="cp-pane">
+        <h4>History</h4>
+        <table class="cp-table">
+          <tbody>
+            <tr><td class="nowrap" style="width: 1%;"><span class="cp-dot green"></span><b>Shipped</b><br><span class="cp-light" style="font-size: 16px;">10/3/26 · ShipStation</span></td><td>Fountain pen (FP-07) × 1 shipped via USPS on 2026-10-03 with tracking number 9405511899223197428490.</td></tr>
+            <tr><td class="nowrap"><span class="cp-dot orange"></span><b>Partly shipped</b><br><span class="cp-light" style="font-size: 16px;">10/1/26 · ShipStation</span></td><td>Field notebook (NB-A5) × 2 shipped via UPS on 2026-10-01 with tracking number 1Z999AA10123456784.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Shipper</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-shipper</div>
+</section>
+
+<!-- 5 · Retries that don't double up ===================================== -->
+<section class="slide feature" data-n="5">
+  <div class="inner">
+    <div class="copy" style="width: 560px;">
+      <div class="eyebrow"><span class="rule"></span> Idempotent</div>
+      <h2 style="font-size: 88px;">Retries that<br>don't double up</h2>
+      <p class="lede" style="max-width: 540px;">ShipStation re-sends a notification hourly, with no notification ID.</p>
+      <ul class="points">
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Keyed on tracking number plus carrier, so carrier casing can't fool it</span></li>
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Saved before the order, so a failing status email can't create a second</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="retry">
+    <div class="req">
+      <div class="top"><b>shipnotify</b> · 8:02 AM <span class="st new">200 · recorded</span></div>
+      <div class="url">?action=shipnotify&amp;order_number=<em>1042</em>&amp;carrier=<em class="k">UPS</em>&amp;tracking_number=<em>1Z999AA10123456784</em></div>
+      <div class="key">Shipment key <code>1Z999AA10123456784|ups</code></div>
+      <div class="sum">Recorded shipment for order 1042 (UPS 1Z999AA10123456784)</div>
+    </div>
+    <div class="gap">an hour later, ShipStation tries again</div>
+    <div class="req">
+      <div class="top"><b>shipnotify</b> · 9:02 AM <span class="st dup">200 · ignored</span></div>
+      <div class="url">?action=shipnotify&amp;order_number=<em>1042</em>&amp;carrier=<em class="k">ups</em>&amp;tracking_number=<em>1Z999AA10123456784</em></div>
+      <div class="key">Shipment key <code>1Z999AA10123456784|ups</code> <span>already recorded</span></div>
+      <div class="sum dim">Duplicate shipment for order 1042 ignored</div>
+    </div>
+    <div class="count">
+      <div><b>1</b>shipment row</div>
+      <div><b>2 of 3</b>items shipped, not 4</div>
+      <div><b>0</b>extra status emails</div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Shipper</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-shipper</div>
+</section>
+
+<!-- 6 · Live rates that fail open (Pro) ================================== -->
+<section class="slide feature" data-n="6">
+  <div class="inner">
+    <div class="copy" style="width: 560px;">
+      <div class="eyebrow"><span class="rule"></span> Live rates <span class="pro">Pro</span></div>
+      <h2>Live rates<br>that fail open</h2>
+      <p class="lede" style="max-width: 540px;">Carrier rates as Commerce shipping methods. If ShipStation is unreachable, checkout carries on.</p>
+      <ul class="points">
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Quotes cached on the cart's contents, so a changed cart re-quotes</span></li>
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Markup, carrier and service filters, and a timeout you set</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="checkout">
+    <div class="co">
+      <div class="hd up"><i></i> ShipStation answering</div>
+      <h3>Shipping</h3>
+      <div class="m on"><span class="r"></span><span class="n">USPS Priority Mail<span class="tag">live</span><small>about 2 business days</small></span><span class="p">$9.85</span></div>
+      <div class="m"><span class="r"></span><span class="n">UPS Ground<span class="tag">live</span><small>about 4 business days</small></span><span class="p">$12.40</span></div>
+      <div class="m"><span class="r"></span><span class="n">FedEx 2Day<span class="tag">live</span><small>about 2 business days</small></span><span class="p">$21.70</span></div>
+      <div class="m"><span class="r"></span><span class="n">Standard shipping<small>your own method</small></span><span class="p">$8.00</span></div>
+      <div class="pay">Pay $74.85</div>
+    </div>
+    <div class="co">
+      <div class="hd down"><i></i> ShipStation unreachable</div>
+      <h3>Shipping</h3>
+      <div class="m on"><span class="r"></span><span class="n">Standard shipping<small>your own method</small></span><span class="p">$8.00</span></div>
+      <div class="m"><span class="r"></span><span class="n">Express shipping<small>your own method</small></span><span class="p">$18.00</span></div>
+      <p class="note" style="margin-top: 14px;">After the rate timeout, no live methods appear. The customer never sees an error.</p>
+      <div class="pay">Pay $73.00</div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Shipper</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-shipper</div>
+</section>
+
+<!-- 7 · Twig tracking API ================================================ -->
+<section class="slide feature" data-n="7">
+  <div class="inner">
+    <div class="copy" style="width: 560px;">
+      <div class="eyebrow"><span class="rule"></span> Front end</div>
+      <h2>“Where is<br>my order?”</h2>
+      <p class="lede" style="max-width: 540px;">A tracking page in a few lines of Twig. Links built for 20+ carriers.</p>
+      <ul class="points">
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Also <code>latestShipment</code>, <code>isShipped</code> and <code>knownCarriers</code></span></li>
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>The raw payload, with its address, never reaches a template</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="codebox">
+    <div class="tab">templates/account/order.twig</div>
+<pre><span class="t">{% for</span> <span class="v">shipment</span> <span class="t">in</span> <span class="v">craft.shipper.shipments</span>(order) <span class="t">%}</span>
+    <span class="t">{{</span> shipment.getLabel() <span class="t">}}</span>
+    <span class="t">{% set</span> url = <span class="v">craft.shipper.trackingUrl</span>(
+        shipment.carrier, shipment.trackingNumber) <span class="t">%}</span>
+    <span class="t">{% if</span> url <span class="t">%}</span>
+        <span class="h">&lt;a href="</span><span class="t">{{</span> url <span class="t">}}</span><span class="h">"&gt;</span><span class="t">{{</span> shipment.trackingNumber <span class="t">}}</span><span class="h">&lt;/a&gt;</span>
+    <span class="t">{% endif %}</span>
+<span class="t">{% endfor %}</span>
+
+<span class="t">{% set</span> progress = <span class="v">craft.shipper.progress</span>(order) <span class="t">%}</span>
+<span class="t">{{</span> progress.shipped <span class="t">}}</span> of <span class="t">{{</span> progress.total <span class="t">}}</span> items shipped</pre>
+    <div class="out">
+      <div class="lbl">Renders</div>
+      <div class="ship"><b>UPS Ground</b> <a>1Z999AA10123456784</a></div>
+      <div class="bar"><i></i></div>
+      <div class="prog">2 of 3 items shipped</div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Shipper</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-shipper</div>
+</section>
+
+<!-- 8 · Editions ========================================================= -->
+<section class="slide closing" data-n="8">
+  <div class="inner">
+    <div class="eyebrow"><span class="rule"></span> Two editions</div>
+    <h2>Lite is the whole connection</h2>
+    <p class="lede">Orders out, tracking back, shipments on the order screen. Pro adds the log, partial shipments and the ShipStation API.</p>
+    <div class="cols">
+      <div class="col">
+        <h3>Lite <small>Free</small></h3>
+        <ul>
+          <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Custom Store export and shipment notifications</span></li>
+          <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Shipments stored as data, with a CP index</span></li>
+          <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Tracking links for 20+ carriers, and a panel on the order screen</span></li>
+          <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>The <code>craft.shipper.*</code> Twig API</span></li>
+          <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Shipped-status mapping, and console commands for export and the log</span></li>
+        </ul>
+      </div>
+      <div class="col pro">
+        <h3>Pro <small>$99 · then $79/yr</small></h3>
+        <ul>
+          <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Connection log with request and response payloads</span></li>
+          <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Partial shipments, counted per item</span></li>
+          <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Status mapping to ShipStation’s statuses, and custom field templates</span></li>
+          <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Sync now: make ShipStation re-import immediately</span></li>
+          <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0B07A" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Live carrier rates at checkout, and <code>rates/quote</code> and <code>sync/refresh</code> from the console</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Shipper</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-shipper</div>
+</section>
+
+<script>
+  var n = new URLSearchParams(location.search).get('s');
+  if (n) {
+    document.body.classList.add('single');
+    var el = document.querySelector('.slide[data-n="' + n + '"]');
+    if (el) el.classList.add('active');
+  }
+</script>
+</body>
+</html>

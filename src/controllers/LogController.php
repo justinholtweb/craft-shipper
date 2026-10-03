@@ -65,6 +65,7 @@ class LogController extends Controller
     public function actionPrune(): Response
     {
         $this->requirePostRequest();
+        $this->requirePermission('shipper-manageLog');
 
         $days = (int)Craft::$app->getRequest()->getBodyParam('days', 0);
         $deleted = Plugin::getInstance()->getLog()->prune($days > 0 ? $days : null);
@@ -75,6 +76,7 @@ class LogController extends Controller
     public function actionClear(): Response
     {
         $this->requirePostRequest();
+        $this->requirePermission('shipper-manageLog');
 
         $deleted = Plugin::getInstance()->getLog()->clear();
 

@@ -105,6 +105,18 @@ class Shipments extends Component
         $this->bumpOrderState($order->id, $shippedQty);
 
         $fullyShipped = $this->decideFullyShipped($order, $items);
+
+        // A shipment that completes the order without itemising it (an item-less notification, a
+        // hand-recorded one, or any shipment on Lite) has to bring the count up with it, or
+        // isShipped() and progress() contradict the order's own status.
+        if ($fullyShipped) {
+            $shortfall = $this->getShippableQty($order) - $this->getOrderState((int)$order->id)['shippedQty'];
+
+            if ($shortfall > 0) {
+                $this->bumpOrderState($order->id, $shortfall);
+            }
+        }
+
         $statusChanged = $this->applyStatus($order, $shipment, $fullyShipped);
 
         return [

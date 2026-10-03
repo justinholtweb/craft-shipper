@@ -10,6 +10,7 @@ use craft\commerce\events\RegisterAvailableShippingMethodsEvent;
 use craft\commerce\services\ShippingMethods;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
+use craft\services\Gc;
 use craft\services\UserPermissions;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
@@ -85,6 +86,7 @@ class Plugin extends BasePlugin
         $this->_registerTwigVariable();
         $this->_registerPermissions();
         $this->_registerCpRoutes();
+        $this->_registerGarbageCollection();
 
         // The plugin can be installed while Commerce is disabled or mid-upgrade; everything below
         // touches an order, so it all has to wait for Commerce to actually be there.
@@ -238,6 +240,11 @@ class Plugin extends BasePlugin
                         ],
                         'shipper-viewLog' => [
                             'label' => Craft::t('shipper', 'View the connection log'),
+                            'nested' => [
+                                'shipper-manageLog' => [
+                                    'label' => Craft::t('shipper', 'Clear and prune the connection log'),
+                                ],
+                            ],
                         ],
                         'shipper-syncOrders' => [
                             'label' => Craft::t('shipper', 'Trigger a ShipStation sync'),
@@ -246,6 +253,17 @@ class Plugin extends BasePlugin
                 ];
             }
         );
+    }
+
+    /**
+     * The endpoint is public, so the log grows with every request anyone makes to it; retention is
+     * enforced on Craft's garbage collection, not only when somebody remembers the prune button.
+     */
+    private function _registerGarbageCollection(): void
+    {
+        Event::on(Gc::class, Gc::EVENT_RUN, function() {
+            $this->getLog()->prune();
+        });
     }
 
     private function _registerCpRoutes(): void
@@ -304,16 +322,22 @@ class Plugin extends BasePlugin
                     return;
                 }
 
-                $methods = $event->getShippingMethods();
+                // Checkout fails open: a cache outage or a malformed quote must leave the store's
+                // own methods in place, never 500 the cart.
+                try {
+                    $methods = $event->getShippingMethods();
 
-                foreach ($plugin->getRates()->getRatesForOrder($event->order) as $rate) {
-                    $methods->push(new LiveRateShippingMethod([
-                        'rate' => $rate,
-                        'storeId' => $event->order->storeId,
-                    ]));
+                    foreach ($plugin->getRates()->getRatesForOrder($event->order) as $rate) {
+                        $methods->push(new LiveRateShippingMethod([
+                            'rate' => $rate,
+                            'storeId' => $event->order->storeId,
+                        ]));
+                    }
+
+                    $event->setShippingMethods($methods);
+                } catch (\Throwable $e) {
+                    Craft::warning('Shipper live rates skipped: ' . $e->getMessage(), __METHOD__);
                 }
-
-                $event->setShippingMethods($methods);
             }
         );
     }

@@ -10,7 +10,7 @@ Distributed as `justinholtweb/craft-shipper`. **Lite (free) + Pro ($99).**
 
 `fostercommerce/shipstationconnect` ($59) already does the custom-store handshake. Shipper's edge
 is everything around it: no content modelling (Foster makes you hand-build a Matrix field and type
-six handles into settings), a real connection log, partial shipments, two-way status mapping, an
+six handles into settings), a real connection log, partial shipments, status mapping, an
 `auth_key` fallback for Apache installs that eat the `Authorization` header, live checkout rates,
 console commands, and a front-end tracking API.
 
@@ -83,6 +83,13 @@ ShipStation's own help centre 403s bots.
 - **A private property is not a Yii attribute**, so a setting backed by a getter/setter pair is
   never persisted unless `attributes()` is overridden to name it. Needed for the editable-table
   rate lists, which post `[['value' => …], …]` rather than a flat list.
+- **Element date params re-convert their input.** `->dateUpdated('>= …')` reads a bare
+  `Y-m-d H:i:s` as *system-timezone* time and converts it to UTC itself, so feeding it
+  `Db::prepareDateForDb()` output shifts the window by the site's offset. Pass ISO 8601 with an
+  offset (`DATE_ATOM`). A 2020–2099 window hides this; only a tight window catches it.
+- **The plugin-testing harness is shared and busy.** It holds 300+ completed orders, so never
+  assume a fixture is on page 1, and other sessions write project config mid-run — a one-off
+  `StaleResourceException` or vanished fixture is them, not Shipper. Re-run before chasing it.
 - **`craft\console\Request` has no `getUserIP()`-worthy client**, so anything that may run from a
   console command has to type-check before reaching for web-only request methods.
 - **Craft plugin console commands are not reachable via `craft help <handle>`** — they are listed
@@ -99,7 +106,7 @@ No local PHP on this Mac. Everything runs inside the plugin-testing container:
 
 ```sh
 cd ~/Sites/plugin-testing
-ddev exec php /var/www/craft-shipper/tests/integration/checks.php   # 119 checks
+ddev exec php /var/www/craft-shipper/tests/integration/checks.php   # 132 checks
 ddev exec bash -c 'find /var/www/craft-shipper/src -name "*.php" -print0 | xargs -0 -n1 php -l'
 ```
 

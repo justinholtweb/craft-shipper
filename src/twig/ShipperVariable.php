@@ -29,7 +29,13 @@ class ShipperVariable extends Behavior
             return [];
         }
 
-        return Plugin::getInstance()->getShipments()->getShipmentsForOrder((int)$orderId);
+        // The raw ShipStation payload carries the ship-to address. Front-end templates have no
+        // use for it, and one that passes an unverified id must not be able to leak it.
+        return array_map(static function(Shipment $shipment) {
+            $shipment->rawPayload = null;
+
+            return $shipment;
+        }, Plugin::getInstance()->getShipments()->getShipmentsForOrder((int)$orderId));
     }
 
     /**

@@ -304,6 +304,7 @@ class Rates extends Component
      */
     private function signature(Order $order): string
     {
+        $settings = Plugin::getInstance()->getSettings();
         $address = $order->getShippingAddress();
 
         $items = [];
@@ -321,6 +322,17 @@ class Rates extends Component
             'city' => $address?->locality,
             'line1' => $address?->addressLine1,
             'items' => $items,
+            // Everything that shapes the quote or its price. Without these a changed markup or
+            // carrier filter would not apply until the old quotes expired.
+            'settings' => [
+                $settings->rateCarrierIds,
+                $settings->rateServiceCodes,
+                $settings->rateMarkupType,
+                $settings->rateMarkupAmount,
+                $settings->defaultItemWeight,
+                $settings->packageCode,
+                $settings->shipFrom,
+            ],
         ]));
     }
 }

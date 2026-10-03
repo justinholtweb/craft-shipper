@@ -1,8 +1,8 @@
 {
     "name": "justinholtweb/craft-shipper",
     "description": "ShipStation integration for Craft Commerce — export orders, receive tracking, quote live carrier rates, and see every request in a log.",
-    "version": "5.0.0",
     "type": "craft-plugin",
+    "homepage": "https://justinholt.com/plugins/craft-shipper",
     "keywords": [
         "craftcms",
         "craft-plugin",
@@ -21,7 +21,10 @@
         }
     ],
     "support": {
-        "email": "justin@justinholt.com"
+        "email": "justin@justinholt.com",
+        "docs": "https://justinholt.com/plugins/craft-shipper/docs",
+        "source": "https://github.com/justinholtweb/craft-shipper",
+        "issues": "https://github.com/justinholtweb/craft-shipper/issues"
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
@@ -49,7 +52,7 @@
         "handle": "shipper",
         "developer": "Justin Holt",
         "developerUrl": "https://justinholt.com",
-        "documentationUrl": "https://github.com/justinholtweb/craft-shipper/blob/main/README.md",
+        "documentationUrl": "https://justinholt.com/plugins/craft-shipper/docs",
         "changelogUrl": "https://raw.githubusercontent.com/justinholtweb/craft-shipper/main/CHANGELOG.md",
         "class": "justinholtweb\\shipper\\Plugin"
     }

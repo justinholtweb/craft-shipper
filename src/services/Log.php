@@ -94,7 +94,10 @@ class Log extends Component
 
     public function getEntryById(int $id): ?LogEntry
     {
+        // Named columns, not `*`: the table has a dateUpdated the model does not, and Yii throws
+        // on an unknown property rather than ignoring it.
         $row = (new Query())
+            ->select(['id', 'action', 'level', 'statusCode', 'durationMs', 'ip', 'summary', 'message', 'request', 'response', 'dateCreated', 'uid'])
             ->from([Table::LOG])
             ->where(['id' => $id])
             ->one();

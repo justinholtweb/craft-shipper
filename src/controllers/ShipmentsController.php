@@ -145,6 +145,12 @@ class ShipmentsController extends Controller
             throw new NotFoundHttpException('Order not found');
         }
 
+        // The preview is the customer's whole record — addresses, email, phone — so seeing
+        // shipments is not enough; the user has to be allowed to see the order itself.
+        if (!Craft::$app->getElements()->canView($order)) {
+            throw new ForbiddenHttpException('User is not permitted to view this order');
+        }
+
         $xml = Plugin::getInstance()->getExport()->previewOrder($order);
 
         return $this->asJson([

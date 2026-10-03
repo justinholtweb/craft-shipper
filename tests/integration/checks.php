@@ -352,6 +352,13 @@ try {
     // ---------------------------------------------------------------------
     section('Rate model');
 
+    check('a service name that already carries the carrier is not prefixed twice', function() {
+        $doubled = (new Rate(['carrierName' => 'UPS', 'serviceName' => 'UPS® Ground']))->getName();
+        $plain = (new Rate(['carrierName' => 'USPS', 'serviceName' => 'Priority Mail']))->getName();
+
+        return $doubled === 'UPS® Ground' && $plain === 'USPS Priority Mail' ?: "$doubled / $plain";
+    });
+
     check('a rate handle is a legal Craft handle', function() {
         $rate = new Rate(['carrierCode' => 'stamps_com', 'serviceCode' => 'usps_priority_mail']);
         $handle = $rate->getHandle();
@@ -412,6 +419,23 @@ try {
         $ids = $export->createQuery()->ids();
 
         return in_array($order->id, $ids, true) ?: 'order ' . $order->id . ' not in ' . count($ids) . ' results';
+    });
+
+    check('a tight UTC window around the fixture finds it, whatever the system timezone', function() use ($export, $order) {
+        // ShipStation sends UTC bounds. Handing them to the element query as bare UTC strings got
+        // them re-read as system-timezone time, shifting the window by the site's offset.
+        $utc = new DateTimeZone('UTC');
+        $updated = DateTimeImmutable::createFromInterface($order->dateUpdated)->setTimezone($utc);
+        $ids = $export->createQuery($updated->modify('-1 minute'), $updated->modify('+1 minute'))->ids();
+
+        return in_array($order->id, $ids, true)
+            ?: 'order ' . $order->id . ' not in window (system timezone ' . Craft::$app->getTimeZone() . ')';
+    });
+
+    check('the export sort breaks dateUpdated ties on id, so offset paging cannot skip orders', function() use ($export) {
+        $orderBy = $export->createQuery()->orderBy;
+
+        return array_keys($orderBy) === ['commerce_orders.dateUpdated', 'commerce_orders.id'] ?: json_encode($orderBy);
     });
 
     $xml = $export->previewOrder($order);
@@ -550,7 +574,10 @@ try {
         // The export page batch-loads order histories in one query while the preview reads them
         // off the order; both paths have to produce the same document.
         $preview = new SimpleXMLElement($export->previewOrder($order));
-        $page = new SimpleXMLElement($export->buildExport(null, null, 1)['xml']);
+        // Window the page on the fixture: a shared harness holds more completed orders than fit
+        // on one page, and the fixture, being the newest, sorts last.
+        $since = (clone $order->dateUpdated)->modify('-1 minute');
+        $page = new SimpleXMLElement($export->buildExport($since, null, 1)['xml']);
 
         $fromPage = null;
 
@@ -886,6 +913,10 @@ try {
 
     $authKey = $plugin->getSettings()->getParsedAuthKey();
 
+    // Rejections are logged at most once a minute; a previous run inside that minute must not
+    // swallow this one's.
+    Craft::$app->getCache()->delete('shipper.log.rejected');
+
     check('an unauthenticated request is rejected', function() use ($client) {
         $response = $client->get('actions/shipper/api/process', ['query' => ['action' => 'export']]);
 
@@ -949,11 +980,14 @@ try {
     });
 
     check('the served export is well-formed XML containing the fixture order', function() use ($client, $authKey, $order) {
+        // Windowed on the fixture for the same reason as the page check above.
+        $since = (clone $order->dateUpdated)->setTimezone(new DateTimeZone('UTC'))->modify('-1 minute');
+
         $response = $client->get('actions/shipper/api/process', [
             'query' => [
                 'action' => 'export',
                 'auth_key' => $authKey,
-                'start_date' => '01/01/2020 00:00',
+                'start_date' => $since->format('m/d/Y H:i'),
                 'end_date' => '01/01/2099 00:00',
                 'page' => 1,
             ],
@@ -1074,6 +1108,34 @@ try {
         return !str_contains((string)$row['items'], 'root:') ?: 'entity was expanded';
     });
 
+    check('repeated rejections inside a minute are logged once, so the public URL cannot fill the table', function() use ($client, $plugin) {
+        $before = $plugin->getLog()->count();
+
+        for ($i = 0; $i < 5; $i++) {
+            $client->get('actions/shipper/api/process', ['query' => ['action' => 'export', 'auth_key' => 'nope']]);
+        }
+
+        $added = $plugin->getLog()->count() - $before;
+
+        return $added === 0 ?: "$added rows for 5 rejections already inside the window";
+    });
+
+    check('the logged request URL masks the auth key', function() use ($plugin, $authKey) {
+        foreach ($plugin->getLog()->getEntries(['action' => 'export'], 50) as $entry) {
+            $full = $plugin->getLog()->getEntryById((int)$entry->id);
+
+            if ($full !== null && str_contains((string)$full->request, 'auth_key=')) {
+                if (str_contains((string)$full->request, $authKey)) {
+                    return 'auth key stored in the log: ' . substr((string)$full->request, 0, 200);
+                }
+
+                return str_contains((string)$full->request, 'auth_key=***') ?: substr((string)$full->request, 0, 200);
+            }
+        }
+
+        return 'no logged export request carried an auth_key';
+    });
+
     check('the endpoint logged its requests', function() use ($plugin) {
         $entries = $plugin->getLog()->getEntries(['action' => 'shipnotify'], 20);
 
@@ -1090,6 +1152,37 @@ try {
         return 'no 401 entry logged';
     });
 
+    check('an item-less shipment that completes the order also completes the count', function() use ($variantA, $plugin, $suffix) {
+        $bare = makeOrder([['variant' => $variantA, 'qty' => 3]]);
+        $plugin->getShipments()->record($bare, [
+            'carrier' => 'UPS',
+            'trackingNumber' => "BARE-$suffix",
+            'items' => [],
+            'source' => 'manual',
+        ]);
+
+        return $plugin->getShipments()->isFullyShipped($bare)
+            ?: 'order completed but shippedQty ' . $plugin->getShipments()->getOrderState((int)$bare->id)['shippedQty'] . ' of 3';
+    });
+
+    check('the rate cache key changes when the markup does', function() use ($plugin, $order) {
+        $settings = $plugin->getSettings();
+        $signature = new ReflectionMethod($plugin->getRates(), 'signature');
+        $original = [$settings->rateMarkupType, $settings->rateMarkupAmount];
+
+        try {
+            $settings->rateMarkupType = 'percent';
+            $settings->rateMarkupAmount = 10;
+            $a = $signature->invoke($plugin->getRates(), $order);
+            $settings->rateMarkupAmount = 25;
+            $b = $signature->invoke($plugin->getRates(), $order);
+        } finally {
+            [$settings->rateMarkupType, $settings->rateMarkupAmount] = $original;
+        }
+
+        return $a !== $b ?: 'same signature for 10% and 25% markup';
+    });
+
     // ---------------------------------------------------------------------
     section('Twig variable');
 
@@ -1101,6 +1194,22 @@ try {
 
     check('shipments() accepts a bare id', function() use ($variable, $httpOrder) {
         return count($variable->shipments((int)$httpOrder->id)) >= 1;
+    });
+
+    check('shipments() never hands the raw payload, with its ship-to address, to a template', function() use ($variable, $httpOrder, $plugin) {
+        $stored = $plugin->getShipments()->getShipmentsForOrder((int)$httpOrder->id);
+
+        if (($stored[0]->rawPayload ?? null) === null) {
+            return 'fixture shipment has no raw payload, so this proves nothing';
+        }
+
+        foreach ($variable->shipments($httpOrder) as $shipment) {
+            if ($shipment->rawPayload !== null) {
+                return 'rawPayload exposed';
+            }
+        }
+
+        return true;
     });
 
     check('shipments() on null is empty rather than an error', fn() => $variable->shipments(null) === []);
@@ -1124,6 +1233,21 @@ try {
 
     // ---------------------------------------------------------------------
     section('Edition gating');
+
+    check('managing the log is a separate permission from viewing it', function() {
+        foreach (Craft::$app->getUserPermissions()->getAllPermissions() as $group) {
+            if (isset($group['permissions']['shipper-viewLog'])) {
+                return isset($group['permissions']['shipper-viewLog']['nested']['shipper-manageLog'])
+                    ?: json_encode($group['permissions']['shipper-viewLog']);
+            }
+        }
+
+        return 'no Shipper permissions registered';
+    });
+
+    check('a garbage-collection handler is registered to prune the log', function() {
+        return yii\base\Event::hasHandlers(craft\services\Gc::class, craft\services\Gc::EVENT_RUN) ?: 'no GC handler';
+    });
 
     check('Lite and Pro are the two editions', function() {
         return Plugin::editions() === [Plugin::EDITION_LITE, Plugin::EDITION_PRO]
